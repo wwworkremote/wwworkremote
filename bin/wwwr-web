@@ -20,6 +20,8 @@ export PORT="${PORT:-31000}"
 # Root cause still open -- see TASK-141.
 export WEB_CONCURRENCY="${WEB_CONCURRENCY:-1}"
 export PUMA_WORKER_TIMEOUT="${PUMA_WORKER_TIMEOUT:-120}"
+export RAILS_MAX_THREADS="${RAILS_MAX_THREADS:-10}"
+export RAILS_MIN_THREADS="${RAILS_MIN_THREADS:-2}"
 export OBJC_DISABLE_INITIALIZE_FORK_SAFETY=YES
 
 # This is a non-interactive launchd service: no TTY to attach rdbg to, and a
