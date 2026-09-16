@@ -21,6 +21,7 @@
 # Indexes
 #
 #  index_interview_sessions_on_job_posting_id  (job_posting_id)
+#  index_interview_sessions_on_outcome         (outcome)
 #  index_interview_sessions_on_user_id         (user_id)
 #
 # Foreign Keys

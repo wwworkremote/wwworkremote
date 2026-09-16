@@ -351,6 +351,7 @@ Rails.application.routes.draw do
         resources :application_field_observations, only: [:create]
         resource :application_context, only: %i[show update]
         resource :application_status, only: %i[show create]
+        resources :application_capability_probes, only: [:create]
       end
     end
   end

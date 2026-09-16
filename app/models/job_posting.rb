@@ -28,11 +28,10 @@ class JobPosting < ApplicationRecord
   has_many :interview_sessions, dependent: :destroy
   has_many :interview_tasks, dependent: :destroy
   has_many :application_questions, dependent: :destroy
+  has_many :application_capability_probes, dependent: :destroy
   has_many :leads, dependent: :nullify
 
-  def reformatting?
-    data["reformatting"] == true
-  end
+  def reformatting? = data["reformatting"] == true
 
   scope :recent, -> { order(Arel.sql("published_at DESC NULLS LAST")) }
   scope :by_company, -> { order(Arel.sql("company_name ASC NULLS LAST")) }

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_03_154301) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_11_140000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "citext"
   enable_extension "fuzzystrmatch"
@@ -139,6 +139,19 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_03_154301) do
     t.bigint "user_id", null: false
     t.index ["user_id", "persona_id", "normalized_prompt"], name: "idx_answer_templates_lookup"
     t.index ["user_id"], name: "index_application_answer_templates_on_user_id"
+  end
+
+  create_table "application_capability_probes", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.jsonb "evidence", default: {}, null: false
+    t.string "grade", null: false
+    t.bigint "job_posting_id", null: false
+    t.datetime "probed_at", null: false
+    t.string "provider", null: false
+    t.integer "score", null: false
+    t.datetime "updated_at", null: false
+    t.index ["job_posting_id", "probed_at"], name: "idx_on_job_posting_id_probed_at_04cff8d868"
+    t.index ["job_posting_id"], name: "index_application_capability_probes_on_job_posting_id"
   end
 
   create_table "application_field_answers", force: :cascade do |t|
@@ -398,17 +411,27 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_03_154301) do
     t.text "error_message"
     t.string "error_name"
     t.string "event_name", null: false
+    t.bigint "guided_session_id"
     t.string "guided_session_token"
+    t.bigint "job_posting_id"
     t.datetime "occurred_at", null: false
     t.string "page_host"
     t.string "phase"
     t.string "provider"
     t.boolean "recoverable", default: false, null: false
+    t.string "signature"
+    t.string "status", default: "open", null: false
     t.string "trace_id"
     t.datetime "updated_at", null: false
+    t.bigint "user_job_posting_id"
     t.index ["event_name", "occurred_at"], name: "index_extension_error_events_on_event_name_and_occurred_at"
+    t.index ["guided_session_id"], name: "index_extension_error_events_on_guided_session_id"
     t.index ["guided_session_token"], name: "index_extension_error_events_on_guided_session_token"
+    t.index ["job_posting_id"], name: "index_extension_error_events_on_job_posting_id"
+    t.index ["signature"], name: "index_extension_error_events_on_signature"
+    t.index ["status"], name: "index_extension_error_events_on_status"
     t.index ["trace_id"], name: "index_extension_error_events_on_trace_id"
+    t.index ["user_job_posting_id"], name: "index_extension_error_events_on_user_job_posting_id"
   end
 
   create_table "extraction_rule_observations", force: :cascade do |t|
@@ -565,6 +588,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_03_154301) do
     t.bigint "user_id", null: false
     t.string "vibe"
     t.index ["job_posting_id"], name: "index_interview_sessions_on_job_posting_id"
+    t.index ["outcome"], name: "index_interview_sessions_on_outcome"
     t.index ["user_id"], name: "index_interview_sessions_on_user_id"
   end
 
@@ -917,6 +941,20 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_03_154301) do
     t.index ["scenario_id"], name: "index_reference_scenarios_on_scenario_id", unique: true
   end
 
+  create_table "resume_refreshes", force: :cascade do |t|
+    t.datetime "approved_at"
+    t.datetime "created_at", null: false
+    t.jsonb "plan", default: {}, null: false
+    t.string "provider", null: false
+    t.datetime "rejected_at"
+    t.text "resolution_note"
+    t.string "status", default: "pending", null: false
+    t.datetime "updated_at", null: false
+    t.bigint "user_id", null: false
+    t.index ["user_id", "status"], name: "index_resume_refreshes_on_user_id_and_status"
+    t.index ["user_id"], name: "index_resume_refreshes_on_user_id"
+  end
+
   create_table "resume_skills", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.bigint "resume_id", null: false
@@ -1197,6 +1235,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_03_154301) do
     t.datetime "applied_at"
     t.text "cover_letter"
     t.datetime "created_at", null: false
+    t.datetime "follow_up_at"
     t.text "interview_prep_pack"
     t.datetime "interview_prep_pack_generated_at"
     t.text "interview_prep_pack_spoken"
@@ -1219,6 +1258,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_03_154301) do
     t.bigint "user_id", null: false
     t.index ["application_trace_id"], name: "index_user_job_postings_on_application_trace_id"
     t.index ["applied_at"], name: "index_user_job_postings_on_applied_at"
+    t.index ["follow_up_at"], name: "index_user_job_postings_on_follow_up_at"
     t.index ["job_posting_id"], name: "index_user_job_postings_on_job_posting_id"
     t.index ["job_search_id"], name: "index_user_job_postings_on_job_search_id"
     t.index ["match_score"], name: "index_user_job_postings_on_match_score"
@@ -1278,6 +1318,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_03_154301) do
   add_foreign_key "answer_proposal_verdicts", "question_occurrences"
   add_foreign_key "answer_strategies", "question_archetypes"
   add_foreign_key "application_answer_templates", "users"
+  add_foreign_key "application_capability_probes", "job_postings"
   add_foreign_key "application_field_answers", "user_job_postings"
   add_foreign_key "application_field_mappings", "application_field_answers"
   add_foreign_key "application_field_mappings", "user_job_postings"
@@ -1293,6 +1334,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_03_154301) do
   add_foreign_key "contacts", "job_postings"
   add_foreign_key "contacts", "users"
   add_foreign_key "experience_highlights", "work_experiences"
+  add_foreign_key "extension_error_events", "guided_sessions"
+  add_foreign_key "extension_error_events", "job_postings"
+  add_foreign_key "extension_error_events", "user_job_postings"
   add_foreign_key "finding_dispositions", "comparison_findings"
   add_foreign_key "guided_session_events", "guided_sessions"
   add_foreign_key "guided_session_replays", "guided_sessions"
@@ -1329,6 +1373,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_03_154301) do
   add_foreign_key "reference_comparisons", "reference_scenarios"
   add_foreign_key "reference_comparisons", "scenarios"
   add_foreign_key "reference_scenarios", "scenarios"
+  add_foreign_key "resume_refreshes", "users"
   add_foreign_key "resume_skills", "resumes"
   add_foreign_key "resume_skills", "skills"
   add_foreign_key "resumes", "users"
