@@ -9,6 +9,26 @@
   </div>
 </div>
 
+<div id="friction-reports" class="card-neural p-8 mb-12">
+  <h3 class="text-xs font-bold text-slate-500 mb-1">Reported friction</h3>
+  <p class="text-slate-600 text-xs mb-4">Extension reports are durable workflow context for fixing extraction and guided application paths.</p>
+  <% @friction_reports&.each do |report| %>
+    <div class="border-t border-white/10 py-4 text-xs">
+      <div class="flex justify-between gap-4 font-bold text-white"><span><%= report.error_message %></span><time datetime="<%= report.occurred_at.iso8601 %>"><%= report.occurred_at.strftime("%b %-d, %H:%M:%S") %></time></div>
+      <div class="text-slate-500 mt-1"><%= [report.status.humanize, report.provider, report.phase, report.page_host, report.guided_session_token].compact.join(" · ") %></div>
+      <div class="mt-2 flex flex-wrap gap-3">
+        <% if report.job_posting %><%= link_to "Open posting ##{report.job_posting.id}", job_posting_path(report.job_posting), class: "text-[10px] text-primary hover:underline" %><% end %>
+        <% if report.user_job_posting %><%= link_to "Open application ##{report.user_job_posting.id}", user_job_posting_path(report.user_job_posting), class: "text-[10px] text-accent hover:underline" %><% end %>
+      </div>
+      <%= form_with model: report, url: admin_extension_error_event_path(report), method: :patch, class: "mt-3 flex flex-wrap gap-2" do |form| %>
+        <%= form.select :status, ExtensionErrorEvent::STATUSES.map { |status| [status.humanize, status] }, {}, class: "select select-xs bg-base-300 text-xs" %>
+        <%= form.submit "Update report", class: "btn btn-xs btn-ghost border-white/10" %>
+      <% end %>
+      <% if report.context.present? %><pre class="mt-2 text-[10px] text-slate-400 whitespace-pre-wrap"><%= JSON.pretty_generate(report.context) %></pre><% end %>
+    </div>
+  <% end %>
+</div>
+
 <div class="card-neural mb-12">
   <div class="p-6 border-b border-white/10">
     <h3 class="text-xs font-bold text-slate-500 mb-1">Capture Health &mdash; last 7 days</h3>

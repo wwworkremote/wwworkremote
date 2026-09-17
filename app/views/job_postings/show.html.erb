@@ -334,6 +334,15 @@
 
       <!-- Timeline -->
       <div class="space-y-6">
+        <% @friction_reports&.each do |report| %>
+          <div class="relative pl-6 border-l border-rose-400/30">
+            <div class="absolute -left-[5px] top-0 w-2 h-2 rounded-full bg-rose-400/70"></div>
+            <time class="text-xs font-bold text-base-content/40 block" datetime="<%= report.occurred_at.iso8601 %>"><%= report.occurred_at.strftime("%b %-d, %Y · %H:%M:%S") %></time>
+            <div class="text-sm font-bold text-white">Friction reported from extension</div>
+            <p class="text-xs text-base-content/60 mt-1"><%= report.error_message %></p>
+            <%= link_to "Open issue context", admin_extension_workflow_path(anchor: "extension-workflow-doc"), class: "text-xs text-rose-300 hover:underline mt-2 inline-block font-bold" %>
+          </div>
+        <% end %>
         <% @job_posting.pipeline_steps.order(created_at: :desc).each do |step| %>
           <div class="relative pl-6 border-l border-white/5">
             <div class="absolute -left-[5px] top-0 w-2 h-2 rounded-full bg-primary/30"></div>

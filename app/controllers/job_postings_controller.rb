@@ -18,8 +18,9 @@ class JobPostingsController < ApplicationController
   end
 
   def show
-    @job_posting = JobPosting.includes(:contacts, source: :origin).find(params.expect(:id))
+    @job_posting = find_job_posting
     ahoy.track "Viewed Job Posting", job_posting_id: @job_posting.id, title: @job_posting.title
+    @friction_reports = load_friction_reports(@job_posting)
   end
 
   # Corrects scraped-data damage inline from the show page (TASK-86, widened by
@@ -82,5 +83,14 @@ class JobPostingsController < ApplicationController
       ActionView::RecordIdentifier.dom_id(job_posting, :description),
       partial: "job_postings/description", locals: { job_posting: job_posting }
     )
+  end
+
+  def find_job_posting
+    JobPosting.includes(:contacts, source: :origin).find(params.expect(:id))
+  end
+
+  def load_friction_reports(posting)
+    ExtensionErrorEvent.where(job_posting: posting, event_name: "friction_report")
+                       .order(occurred_at: :desc).limit(20)
   end
 end

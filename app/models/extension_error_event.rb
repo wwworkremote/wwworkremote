@@ -43,5 +43,12 @@
 #  fk_rails_...  (user_job_posting_id => user_job_postings.id)
 #
 class ExtensionErrorEvent < ApplicationRecord
+  STATUSES = %w[open acknowledged resolved dismissed].freeze
+
+  belongs_to :job_posting, optional: true
+  belongs_to :user_job_posting, optional: true
+  belongs_to :guided_session, optional: true
+
   validates :build_version, :event_name, :occurred_at, presence: true
+  validates :status, inclusion: { in: STATUSES }
 end

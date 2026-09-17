@@ -292,6 +292,7 @@ Rails.application.routes.draw do
       end
     end
     resources :extraction_rules, only: %i[index show]
+    resources :extension_error_events, only: [:update]
     resources :pipeline_filters, only: [:index]
     resources :queries, only: %i[index show]
     resources :documents, only: %i[index show destroy]

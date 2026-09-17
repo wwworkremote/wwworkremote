@@ -11,7 +11,22 @@ class Api::V0::ExtensionErrorEventsController < ApiController
   private
 
   def event_attrs
+    attrs = base_attrs
+    session = GuidedSession.find_by(session_token: params[:guided_session_token])
+    attrs.merge(session_attrs(session)).merge(signature: event_signature(attrs))
+  end
+
+  def base_attrs
     event_params.merge(occurred_at: Time.current, guided_session_token: params[:guided_session_token])
+  end
+
+  def session_attrs(session)
+    ujp = session&.user_job_posting
+    { guided_session: session, user_job_posting: ujp, job_posting: ujp&.job_posting }
+  end
+
+  def event_signature(attrs)
+    Digest::SHA256.hexdigest([attrs[:event_name], attrs[:provider], attrs[:phase], attrs[:error_message]].join("|"))
   end
 
   def event_params
