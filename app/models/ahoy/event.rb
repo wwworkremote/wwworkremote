@@ -1,31 +1,22 @@
 # frozen_string_literal: true
 
-# ## Schema Information
+# == Schema Information
 #
-# Table name: `ahoy_events`
+# Table name: ahoy_events
 #
-# ### Columns
+#  id         :bigint           not null, primary key
+#  name       :string
+#  properties :jsonb
+#  time       :datetime
+#  user_id    :bigint
+#  visit_id   :bigint
 #
-# Name              | Type               | Attributes
-# ----------------- | ------------------ | ---------------------------
-# **`id`**          | `bigint`           | `not null, primary key`
-# **`name`**        | `string`           |
-# **`properties`**  | `jsonb`            |
-# **`time`**        | `datetime`         |
-# **`user_id`**     | `bigint`           |
-# **`visit_id`**    | `bigint`           |
+# Indexes
 #
-# ### Indexes
-#
-# * `index_ahoy_events_on_name_and_time`:
-#     * **`name`**
-#     * **`time`**
-# * `index_ahoy_events_on_properties` (_using_ gin):
-#     * **`properties`**
-# * `index_ahoy_events_on_user_id`:
-#     * **`user_id`**
-# * `index_ahoy_events_on_visit_id`:
-#     * **`visit_id`**
+#  index_ahoy_events_on_name_and_time  (name,time)
+#  index_ahoy_events_on_properties     (properties jsonb_path_ops) USING gin
+#  index_ahoy_events_on_user_id        (user_id)
+#  index_ahoy_events_on_visit_id       (visit_id)
 #
 class Ahoy::Event < ApplicationRecord
   include Ahoy::QueryMethods

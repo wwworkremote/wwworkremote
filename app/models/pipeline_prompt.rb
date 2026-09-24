@@ -6,28 +6,23 @@
 # falls back to its original hardcoded prompt if no active row exists --
 # creating a PipelinePrompt is opt-in, not a requirement to keep the
 # pipeline running.
-# ## Schema Information
+# == Schema Information
 #
-# Table name: `pipeline_prompts`
+# Table name: pipeline_prompts
 #
-# ### Columns
+#  id          :bigint           not null, primary key
+#  active      :boolean          default(TRUE), not null
+#  body        :text             not null
+#  description :text
+#  key         :string           not null
+#  name        :string           not null
+#  stage       :string           not null
+#  created_at  :datetime         not null
+#  updated_at  :datetime         not null
 #
-# Name               | Type               | Attributes
-# ------------------ | ------------------ | ---------------------------
-# **`id`**           | `bigint`           | `not null, primary key`
-# **`active`**       | `boolean`          | `default(TRUE), not null`
-# **`body`**         | `text`             | `not null`
-# **`description`**  | `text`             |
-# **`key`**          | `string`           | `not null`
-# **`name`**         | `string`           | `not null`
-# **`stage`**        | `string`           | `not null`
-# **`created_at`**   | `datetime`         | `not null`
-# **`updated_at`**   | `datetime`         | `not null`
+# Indexes
 #
-# ### Indexes
-#
-# * `index_pipeline_prompts_on_key` (_unique_):
-#     * **`key`**
+#  index_pipeline_prompts_on_key  (key) UNIQUE
 #
 class PipelinePrompt < ApplicationRecord
   # Documents the ERB locals each known integration point passes to

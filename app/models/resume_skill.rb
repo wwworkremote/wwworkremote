@@ -1,35 +1,25 @@
 # frozen_string_literal: true
 
-# ## Schema Information
+# == Schema Information
 #
-# Table name: `resume_skills`
+# Table name: resume_skills
 #
-# ### Columns
+#  id         :bigint           not null, primary key
+#  created_at :datetime         not null
+#  updated_at :datetime         not null
+#  resume_id  :bigint           not null
+#  skill_id   :bigint           not null
 #
-# Name              | Type               | Attributes
-# ----------------- | ------------------ | ---------------------------
-# **`id`**          | `bigint`           | `not null, primary key`
-# **`created_at`**  | `datetime`         | `not null`
-# **`updated_at`**  | `datetime`         | `not null`
-# **`resume_id`**   | `bigint`           | `not null`
-# **`skill_id`**    | `bigint`           | `not null`
+# Indexes
 #
-# ### Indexes
+#  index_resume_skills_on_resume_id               (resume_id)
+#  index_resume_skills_on_resume_id_and_skill_id  (resume_id,skill_id) UNIQUE
+#  index_resume_skills_on_skill_id                (skill_id)
 #
-# * `index_resume_skills_on_resume_id`:
-#     * **`resume_id`**
-# * `index_resume_skills_on_resume_id_and_skill_id` (_unique_):
-#     * **`resume_id`**
-#     * **`skill_id`**
-# * `index_resume_skills_on_skill_id`:
-#     * **`skill_id`**
+# Foreign Keys
 #
-# ### Foreign Keys
-#
-# * `fk_rails_...`:
-#     * **`resume_id => resumes.id`**
-# * `fk_rails_...`:
-#     * **`skill_id => skills.id`**
+#  fk_rails_...  (resume_id => resumes.id)
+#  fk_rails_...  (skill_id => skills.id)
 #
 class ResumeSkill < ApplicationRecord
   belongs_to :resume

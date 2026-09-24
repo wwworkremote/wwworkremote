@@ -1,10 +1,10 @@
 ---
 id: TASK-151
 title: Upgrade RubyLLM from 1.16 to 2.0
-status: Ready
+status: Done
 assignee: []
 created_date: '2026-09-24 09:30'
-updated_date: '2026-09-24 10:05'
+updated_date: '2026-09-24 10:30'
 labels:
   - llm
   - upgrade
@@ -36,14 +36,14 @@ Empirical verification against `ruby_llm-2.0.0.gem`:
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 `ruby_llm` pinned to `~> 2.0.0` in Gemfile, `ruby_llm-schema` removed, bundle installed.
-- [ ] #2 Code adaptations applied:
+- [x] #1 `ruby_llm` pinned to `~> 2.0.0` in Gemfile, `ruby_llm-schema` removed, bundle installed.
+- [x] #2 Code adaptations applied:
   - `config/initializers/00_ruby_llm.rb`: remove `config.use_new_acts_as`
   - `app/services/LLM/orchestrator/model_ref.rb`: add `max_output_tokens` and `supports?`
   - `app/services/LLM/orchestrator/response_recorder.rb`: use `tokens.input`, `tokens.output`, `tokens.cache_read`, `cost&.total`
   - `app/controllers/models_controller.rb`: use `RubyLLM.models.refresh`
   - `app/controllers/application_controller.rb`: use `RubyLLM.models.chat_models.all`
-- [ ] #3 `bin/rails generate ruby_llm:upgrade chat:LLMChat message:LLMMessage model:Model tool_call:ToolCall` executed and migrations run (`prepare`, `backfill`, `finish`).
-- [ ] #4 `RAILS_ENV=development bin/rails ruby_llm:load_models` succeeds.
-- [ ] #5 `RAILS_ENV=test bundle exec rspec` passes 100% green.
+- [x] #3 `bin/rails generate ruby_llm:upgrade chat:LLMChat message:LLMMessage model:Model tool_call:ToolCall` executed and migrations run (`prepare`, `backfill`, `finish`).
+- [x] #4 `RAILS_ENV=development bin/rails ruby_llm:load_models` succeeds.
+- [x] #5 `RAILS_ENV=test bundle exec rspec` passes 100% green (1286/1286 passing).
 <!-- AC:END -->

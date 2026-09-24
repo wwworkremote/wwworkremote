@@ -1,34 +1,26 @@
 # frozen_string_literal: true
 
-# ## Schema Information
+# == Schema Information
 #
-# Table name: `job_searches`
+# Table name: job_searches
 #
-# ### Columns
+#  id         :bigint           not null, primary key
+#  name       :string           not null
+#  status     :string           default("active"), not null
+#  created_at :datetime         not null
+#  updated_at :datetime         not null
+#  resume_id  :bigint
+#  user_id    :bigint           not null
 #
-# Name              | Type               | Attributes
-# ----------------- | ------------------ | ---------------------------
-# **`id`**          | `bigint`           | `not null, primary key`
-# **`name`**        | `string`           | `not null`
-# **`status`**      | `string`           | `default("active"), not null`
-# **`created_at`**  | `datetime`         | `not null`
-# **`updated_at`**  | `datetime`         | `not null`
-# **`resume_id`**   | `bigint`           |
-# **`user_id`**     | `bigint`           | `not null`
+# Indexes
 #
-# ### Indexes
+#  index_job_searches_on_resume_id  (resume_id)
+#  index_job_searches_on_user_id    (user_id)
 #
-# * `index_job_searches_on_resume_id`:
-#     * **`resume_id`**
-# * `index_job_searches_on_user_id`:
-#     * **`user_id`**
+# Foreign Keys
 #
-# ### Foreign Keys
-#
-# * `fk_rails_...`:
-#     * **`resume_id => resumes.id`**
-# * `fk_rails_...`:
-#     * **`user_id => users.id`**
+#  fk_rails_...  (resume_id => resumes.id)
+#  fk_rails_...  (user_id => users.id)
 #
 class JobSearch < ApplicationRecord
   belongs_to :user

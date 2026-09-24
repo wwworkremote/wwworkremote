@@ -2,25 +2,19 @@
 
 require "rails_helper"
 
-# ## Schema Information
+# == Schema Information
 #
-# Table name: `tenant_identities`
+# Table name: tenant_identities
 #
-# ### Columns
+#  id         :bigint           not null, primary key
+#  identifier :string           not null
+#  provider   :string           not null
+#  created_at :datetime         not null
+#  updated_at :datetime         not null
 #
-# Name              | Type               | Attributes
-# ----------------- | ------------------ | ---------------------------
-# **`id`**          | `bigint`           | `not null, primary key`
-# **`identifier`**  | `string`           | `not null`
-# **`provider`**    | `string`           | `not null`
-# **`created_at`**  | `datetime`         | `not null`
-# **`updated_at`**  | `datetime`         | `not null`
+# Indexes
 #
-# ### Indexes
-#
-# * `index_tenant_identities_on_provider_and_identifier` (_unique_):
-#     * **`provider`**
-#     * **`identifier`**
+#  index_tenant_identities_on_provider_and_identifier  (provider,identifier) UNIQUE
 #
 RSpec.describe TenantIdentity do
   describe ".for" do

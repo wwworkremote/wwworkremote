@@ -10,36 +10,28 @@
 # the same (dimension, locator) on the same provider + reference) -- a
 # presentation default only. The finding is not dispositioned until a real
 # FindingDisposition row is written against it.
-# ## Schema Information
+# == Schema Information
 #
-# Table name: `comparison_findings`
+# Table name: comparison_findings
 #
-# ### Columns
+#  id                       :bigint           not null, primary key
+#  category                 :string           not null
+#  detail                   :jsonb            not null
+#  dimension                :string           not null
+#  locator                  :string           not null
+#  created_at               :datetime         not null
+#  updated_at               :datetime         not null
+#  reference_comparison_id  :bigint           not null
+#  suggested_disposition_id :bigint
 #
-# Name                            | Type               | Attributes
-# ------------------------------- | ------------------ | ---------------------------
-# **`id`**                        | `bigint`           | `not null, primary key`
-# **`category`**                  | `string`           | `not null`
-# **`detail`**                    | `jsonb`            | `not null`
-# **`dimension`**                 | `string`           | `not null`
-# **`locator`**                   | `string`           | `not null`
-# **`created_at`**                | `datetime`         | `not null`
-# **`updated_at`**                | `datetime`         | `not null`
-# **`reference_comparison_id`**   | `bigint`           | `not null`
-# **`suggested_disposition_id`**  | `bigint`           |
+# Indexes
 #
-# ### Indexes
+#  index_comparison_findings_on_dimension_and_locator    (dimension,locator)
+#  index_comparison_findings_on_reference_comparison_id  (reference_comparison_id)
 #
-# * `index_comparison_findings_on_dimension_and_locator`:
-#     * **`dimension`**
-#     * **`locator`**
-# * `index_comparison_findings_on_reference_comparison_id`:
-#     * **`reference_comparison_id`**
+# Foreign Keys
 #
-# ### Foreign Keys
-#
-# * `fk_rails_...`:
-#     * **`reference_comparison_id => reference_comparisons.id`**
+#  fk_rails_...  (reference_comparison_id => reference_comparisons.id)
 #
 class ComparisonFinding < ApplicationRecord
   CATEGORIES = %w[drift coverage_gap].freeze

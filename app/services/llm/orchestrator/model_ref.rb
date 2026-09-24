@@ -12,9 +12,16 @@
 #
 # reasoning_option returns nil for every type: no model here is configured
 # for extended thinking, and nil is what Info returns when the option isn't
-# set, so the provider takes its non-thinking path.
 LLM::Orchestrator::ModelRef = Struct.new(:id, :max_tokens) do
+  def max_output_tokens
+    max_tokens
+  end
+
   def reasoning_option(_type)
     nil
+  end
+
+  def supports?(_feature)
+    false
   end
 end

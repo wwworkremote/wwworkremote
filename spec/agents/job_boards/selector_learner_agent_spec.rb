@@ -11,8 +11,7 @@ RSpec.describe JobBoards::SelectorLearnerAgent do
   # never touches @agent.chat -- it only calls render_instructions and
   # builds its own LLMChat -- so a bare object safely no-ops through
   # RubyLLM::Agent's class-level configuration hooks (none of which this
-  # agent uses; instructions/schema are plain instance methods instead).
-  let(:agent) { described_class.new(chat: Object.new) }
+  let(:agent) { described_class.new(chat: double("chat").as_null_object) }
 
   before do
     allow(LLM::Registry).to receive(:default_model).and_return(model)

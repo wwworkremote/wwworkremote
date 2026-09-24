@@ -10,7 +10,7 @@ class ModelsController < ApplicationController
   end
 
   def refresh
-    Model.refresh!
+    RubyLLM.models.refresh
     redirect_to models_path, notice: "Models refreshed successfully"
   end
 end

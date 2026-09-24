@@ -1,25 +1,19 @@
 # frozen_string_literal: true
 
-# ## Schema Information
+# == Schema Information
 #
-# Table name: `job_posting_trends`
+# Table name: job_posting_trends
 #
-# ### Columns
+#  id             :bigint           not null, primary key
+#  postings_count :integer          default(0), not null
+#  role_family    :string           not null
+#  week_start     :date             not null
+#  created_at     :datetime         not null
+#  updated_at     :datetime         not null
 #
-# Name                  | Type               | Attributes
-# --------------------- | ------------------ | ---------------------------
-# **`id`**              | `bigint`           | `not null, primary key`
-# **`postings_count`**  | `integer`          | `default(0), not null`
-# **`role_family`**     | `string`           | `not null`
-# **`week_start`**      | `date`             | `not null`
-# **`created_at`**      | `datetime`         | `not null`
-# **`updated_at`**      | `datetime`         | `not null`
+# Indexes
 #
-# ### Indexes
-#
-# * `index_job_posting_trends_on_week_and_family` (_unique_):
-#     * **`week_start`**
-#     * **`role_family`**
+#  index_job_posting_trends_on_week_and_family  (week_start,role_family) UNIQUE
 #
 class JobPostingTrend < ApplicationRecord
   def self.weekly_breakdown(week_start)

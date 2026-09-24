@@ -1,34 +1,27 @@
 # frozen_string_literal: true
 
-# ## Schema Information
+# == Schema Information
 #
-# Table name: `companies`
+# Table name: companies
 #
-# ### Columns
+#  id                 :bigint           not null, primary key
+#  disposition        :string
+#  glassdoor_data     :jsonb
+#  ingestion_enabled  :boolean          default(TRUE), not null
+#  last_declined_at   :datetime
+#  name               :string
+#  sentiment_score    :float
+#  slug               :string
+#  status             :string
+#  toxic_culture_flag :boolean
+#  created_at         :datetime         not null
+#  updated_at         :datetime         not null
 #
-# Name                      | Type               | Attributes
-# ------------------------- | ------------------ | ---------------------------
-# **`id`**                  | `bigint`           | `not null, primary key`
-# **`disposition`**         | `string`           |
-# **`glassdoor_data`**      | `jsonb`            |
-# **`ingestion_enabled`**   | `boolean`          | `default(TRUE), not null`
-# **`last_declined_at`**    | `datetime`         |
-# **`name`**                | `string`           |
-# **`sentiment_score`**     | `float`            |
-# **`slug`**                | `string`           |
-# **`status`**              | `string`           |
-# **`toxic_culture_flag`**  | `boolean`          |
-# **`created_at`**          | `datetime`         | `not null`
-# **`updated_at`**          | `datetime`         | `not null`
+# Indexes
 #
-# ### Indexes
-#
-# * `index_companies_on_name` (_unique_):
-#     * **`name`**
-# * `index_companies_on_name_trgm` (_using_ gin):
-#     * **`name`**
-# * `index_companies_on_slug` (_unique_):
-#     * **`slug`**
+#  index_companies_on_name       (name) UNIQUE
+#  index_companies_on_name_trgm  (name gin_trgm_ops) USING gin
+#  index_companies_on_slug       (slug) UNIQUE
 #
 FactoryBot.define do
   factory :company do

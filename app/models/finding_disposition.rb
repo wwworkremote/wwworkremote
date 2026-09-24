@@ -5,37 +5,29 @@
 # are never overwritten and stay first-class records. A row carried in from an
 # earlier run's matching finding is only ever a suggested default -- when Mike
 # acts on one, `source_disposition_id` records the lineage.
-# ## Schema Information
+# == Schema Information
 #
-# Table name: `finding_dispositions`
+# Table name: finding_dispositions
 #
-# ### Columns
+#  id                    :bigint           not null, primary key
+#  rationale             :text
+#  reviewer              :string           not null
+#  reviewer_label        :string
+#  value                 :string           not null
+#  created_at            :datetime         not null
+#  updated_at            :datetime         not null
+#  comparison_finding_id :bigint           not null
+#  resume_persona_id     :string
+#  source_disposition_id :bigint
 #
-# Name                         | Type               | Attributes
-# ---------------------------- | ------------------ | ---------------------------
-# **`id`**                     | `bigint`           | `not null, primary key`
-# **`rationale`**              | `text`             |
-# **`reviewer`**               | `string`           | `not null`
-# **`reviewer_label`**         | `string`           |
-# **`value`**                  | `string`           | `not null`
-# **`created_at`**             | `datetime`         | `not null`
-# **`updated_at`**             | `datetime`         | `not null`
-# **`comparison_finding_id`**  | `bigint`           | `not null`
-# **`resume_persona_id`**      | `string`           |
-# **`source_disposition_id`**  | `bigint`           |
+# Indexes
 #
-# ### Indexes
+#  idx_on_comparison_finding_id_created_at_e63111e63f   (comparison_finding_id,created_at)
+#  index_finding_dispositions_on_comparison_finding_id  (comparison_finding_id)
 #
-# * `idx_on_comparison_finding_id_created_at_e63111e63f`:
-#     * **`comparison_finding_id`**
-#     * **`created_at`**
-# * `index_finding_dispositions_on_comparison_finding_id`:
-#     * **`comparison_finding_id`**
+# Foreign Keys
 #
-# ### Foreign Keys
-#
-# * `fk_rails_...`:
-#     * **`comparison_finding_id => comparison_findings.id`**
+#  fk_rails_...  (comparison_finding_id => comparison_findings.id)
 #
 class FindingDisposition < ApplicationRecord
   VALUES = %w[

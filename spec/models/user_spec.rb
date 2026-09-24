@@ -3,29 +3,23 @@
 require "rails_helper"
 
 
-# ## Schema Information
+# == Schema Information
 #
-# Table name: `users`
+# Table name: users
 #
-# ### Columns
+#  id                  :bigint           not null, primary key
+#  email               :string           default(""), not null
+#  name                :string           not null
+#  password_digest     :string
+#  preferred_countries :text             default([]), is an Array
+#  slug                :string           not null
+#  created_at          :datetime         not null
+#  updated_at          :datetime         not null
 #
-# Name                       | Type               | Attributes
-# -------------------------- | ------------------ | ---------------------------
-# **`id`**                   | `bigint`           | `not null, primary key`
-# **`email`**                | `string`           | `default(""), not null`
-# **`name`**                 | `string`           | `not null`
-# **`password_digest`**      | `string`           |
-# **`preferred_countries`**  | `text`             | `default([]), is an Array`
-# **`slug`**                 | `string`           | `not null`
-# **`created_at`**           | `datetime`         | `not null`
-# **`updated_at`**           | `datetime`         | `not null`
+# Indexes
 #
-# ### Indexes
-#
-# * `index_users_on_email` (_unique_):
-#     * **`email`**
-# * `index_users_on_slug` (_unique_):
-#     * **`slug`**
+#  index_users_on_email  (email) UNIQUE
+#  index_users_on_slug   (slug) UNIQUE
 #
 RSpec.describe User do
   describe "validations" do

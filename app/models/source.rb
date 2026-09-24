@@ -1,36 +1,27 @@
 # frozen_string_literal: true
 
-# ## Schema Information
+# == Schema Information
 #
-# Table name: `sources`
+# Table name: sources
 #
-# ### Columns
+#  id         :bigint           not null, primary key
+#  event      :jsonb            not null
+#  payload    :jsonb            not null
+#  signature  :string           not null
+#  created_at :datetime         not null
+#  updated_at :datetime         not null
+#  origin_id  :bigint
 #
-# Name              | Type               | Attributes
-# ----------------- | ------------------ | ---------------------------
-# **`id`**          | `bigint`           | `not null, primary key`
-# **`event`**       | `jsonb`            | `not null`
-# **`payload`**     | `jsonb`            | `not null`
-# **`signature`**   | `string`           | `not null`
-# **`created_at`**  | `datetime`         | `not null`
-# **`updated_at`**  | `datetime`         | `not null`
-# **`origin_id`**   | `bigint`           |
+# Indexes
 #
-# ### Indexes
+#  index_sources_on_event      (event jsonb_path_ops) USING gin
+#  index_sources_on_origin_id  (origin_id)
+#  index_sources_on_payload    (payload jsonb_path_ops) USING gin
+#  index_sources_on_signature  (signature) UNIQUE
 #
-# * `index_sources_on_event` (_using_ gin):
-#     * **`event`**
-# * `index_sources_on_origin_id`:
-#     * **`origin_id`**
-# * `index_sources_on_payload` (_using_ gin):
-#     * **`payload`**
-# * `index_sources_on_signature` (_unique_):
-#     * **`signature`**
+# Foreign Keys
 #
-# ### Foreign Keys
-#
-# * `fk_rails_...`:
-#     * **`origin_id => origins.id`**
+#  fk_rails_...  (origin_id => origins.id)
 #
 class Source < ApplicationRecord
   validates :signature, presence: true, uniqueness: true

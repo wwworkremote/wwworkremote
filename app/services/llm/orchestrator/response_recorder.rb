@@ -33,21 +33,38 @@ class LLM::Orchestrator::ResponseRecorder
       role: "assistant",
       content: full_output,
       model_id: @model.id,
-      input_tokens: @message.input_tokens,
-      output_tokens: @message.output_tokens,
-      cached_tokens: @message.cached_tokens
+      input_tokens: input_tokens,
+      output_tokens: output_tokens,
+      cached_tokens: cached_tokens
     )
   end
 
   def record_usage_attributes
-    set_attribute("app.llm.input_tokens", @message.input_tokens)
-    set_attribute("app.llm.output_tokens", @message.output_tokens)
-    set_attribute("app.llm.cached_tokens", @message.cached_tokens)
+    set_attribute("app.llm.input_tokens", input_tokens)
+    set_attribute("app.llm.output_tokens", output_tokens)
+    set_attribute("app.llm.cached_tokens", cached_tokens)
     set_attribute("app.llm.cost_usd", cost)
   end
 
+  def input_tokens
+    @message.respond_to?(:tokens) && @message.tokens ? @message.tokens.input : @message.try(:input_tokens)
+  end
+
+  def output_tokens
+    @message.respond_to?(:tokens) && @message.tokens ? @message.tokens.output : @message.try(:output_tokens)
+  end
+
+  def cached_tokens
+    @message.respond_to?(:tokens) && @message.tokens ? @message.tokens.cache_read : @message.try(:cached_tokens)
+  end
+
   def cost
-    @message.cost(model: @model.model_id)&.total
+    return nil unless @message.respond_to?(:cost)
+
+    cost_obj = @message.method(:cost).arity.zero? ? @message.cost : @message.cost(model: @model.model_id)
+    cost_obj&.total
+  rescue StandardError
+    nil
   end
 
   def set_attribute(key, value)

@@ -13,8 +13,6 @@ RubyLLM.configure do |config|
   # Default to host llama.cpp server for embeddings
   config.ollama_api_base = ENV["OLLAMA_API_BASE"] || "http://localhost:11500/v1"
 
-  # Use the new association-based acts_as API (recommended)
-  config.use_new_acts_as = true
 end
 
 # Ensure ActiveRecord is extended if the Railtie didn't do it

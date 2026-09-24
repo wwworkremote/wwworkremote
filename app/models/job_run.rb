@@ -6,35 +6,26 @@
 # recorded a start time in the first place. Populated by the
 # ActiveSupport::Notifications subscriber in
 # config/initializers/job_run_tracking.rb, not written to directly elsewhere.
-# ## Schema Information
+# == Schema Information
 #
-# Table name: `job_runs`
+# Table name: job_runs
 #
-# ### Columns
+#  id            :bigint           not null, primary key
+#  error_message :text
+#  finished_at   :datetime
+#  job_class     :string           not null
+#  queue_name    :string
+#  started_at    :datetime         not null
+#  status        :string           default("running"), not null
+#  created_at    :datetime         not null
+#  updated_at    :datetime         not null
+#  active_job_id :string           not null
 #
-# Name                 | Type               | Attributes
-# -------------------- | ------------------ | ---------------------------
-# **`id`**             | `bigint`           | `not null, primary key`
-# **`error_message`**  | `text`             |
-# **`finished_at`**    | `datetime`         |
-# **`job_class`**      | `string`           | `not null`
-# **`queue_name`**     | `string`           |
-# **`started_at`**     | `datetime`         | `not null`
-# **`status`**         | `string`           | `default("running"), not null`
-# **`created_at`**     | `datetime`         | `not null`
-# **`updated_at`**     | `datetime`         | `not null`
-# **`active_job_id`**  | `string`           | `not null`
+# Indexes
 #
-# ### Indexes
-#
-# * `index_job_runs_on_active_job_id`:
-#     * **`active_job_id`**
-# * `index_job_runs_on_job_class_and_created_at`:
-#     * **`job_class`**
-#     * **`created_at`**
-# * `index_job_runs_on_status_and_created_at`:
-#     * **`status`**
-#     * **`created_at`**
+#  index_job_runs_on_active_job_id             (active_job_id)
+#  index_job_runs_on_job_class_and_created_at  (job_class,created_at)
+#  index_job_runs_on_status_and_created_at     (status,created_at)
 #
 class JobRun < ApplicationRecord
   STATUSES = %w[running finished failed].freeze

@@ -27,11 +27,11 @@ RSpec.describe "Models" do
 
   describe "POST /models/refresh" do
     it "refreshes the registry and redirects with a notice" do
-      allow(Model).to receive(:refresh!)
+      allow(RubyLLM.models).to receive(:refresh)
 
       post refresh_models_path
 
-      expect(Model).to have_received(:refresh!)
+      expect(RubyLLM.models).to have_received(:refresh)
       expect(response).to redirect_to(models_path)
       expect(flash[:notice]).to eq("Models refreshed successfully")
     end

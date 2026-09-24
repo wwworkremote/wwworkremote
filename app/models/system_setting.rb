@@ -1,23 +1,18 @@
 # frozen_string_literal: true
 
-# ## Schema Information
+# == Schema Information
 #
-# Table name: `system_settings`
+# Table name: system_settings
 #
-# ### Columns
+#  id         :bigint           not null, primary key
+#  key        :string
+#  value      :string
+#  created_at :datetime         not null
+#  updated_at :datetime         not null
 #
-# Name              | Type               | Attributes
-# ----------------- | ------------------ | ---------------------------
-# **`id`**          | `bigint`           | `not null, primary key`
-# **`key`**         | `string`           |
-# **`value`**       | `string`           |
-# **`created_at`**  | `datetime`         | `not null`
-# **`updated_at`**  | `datetime`         | `not null`
+# Indexes
 #
-# ### Indexes
-#
-# * `index_system_settings_on_key` (_unique_):
-#     * **`key`**
+#  index_system_settings_on_key  (key) UNIQUE
 #
 class SystemSetting < ApplicationRecord
   validates :key, presence: true, uniqueness: true

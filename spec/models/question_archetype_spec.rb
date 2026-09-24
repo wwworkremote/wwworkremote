@@ -2,34 +2,27 @@
 
 require "rails_helper"
 
-# ## Schema Information
+# == Schema Information
 #
-# Table name: `question_archetypes`
+# Table name: question_archetypes
 #
-# ### Columns
+#  id               :bigint           not null, primary key
+#  canonical_prompt :string           not null
+#  label            :string           not null
+#  notes            :text
+#  question_kind    :string           not null
+#  created_at       :datetime         not null
+#  updated_at       :datetime         not null
+#  merged_into_id   :bigint
 #
-# Name                    | Type               | Attributes
-# ----------------------- | ------------------ | ---------------------------
-# **`id`**                | `bigint`           | `not null, primary key`
-# **`canonical_prompt`**  | `string`           | `not null`
-# **`label`**             | `string`           | `not null`
-# **`notes`**             | `text`             |
-# **`question_kind`**     | `string`           | `not null`
-# **`created_at`**        | `datetime`         | `not null`
-# **`updated_at`**        | `datetime`         | `not null`
-# **`merged_into_id`**    | `bigint`           |
+# Indexes
 #
-# ### Indexes
+#  index_question_archetypes_on_merged_into_id  (merged_into_id)
+#  index_question_archetypes_on_question_kind   (question_kind)
 #
-# * `index_question_archetypes_on_merged_into_id`:
-#     * **`merged_into_id`**
-# * `index_question_archetypes_on_question_kind`:
-#     * **`question_kind`**
+# Foreign Keys
 #
-# ### Foreign Keys
-#
-# * `fk_rails_...`:
-#     * **`merged_into_id => question_archetypes.id`**
+#  fk_rails_...  (merged_into_id => question_archetypes.id)
 #
 RSpec.describe QuestionArchetype do
   it "reports its distinct wording variants, most common first" do

@@ -28,6 +28,14 @@ LLM::Orchestrator::ProviderMessage =
       tool_call_id.present?
     end
 
+    def attachments
+      []
+    end
+
+    def cache_until_here?
+      false
+    end
+
     def thinking
       return nil if thinking_text.blank?
 

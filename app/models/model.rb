@@ -36,8 +36,16 @@
 #     * **`provider`**
 #     * **`model_id`**
 #
-class Model < ApplicationRecord
-  include ::RubyLLM::ActiveRecord::ActsAs
+class Model < RubyLLM::ActiveRecord::Model
+  def input_price_per_million
+    price(:input)
+  rescue StandardError
+    nil
+  end
 
-  acts_as_model chats: :llm_chats, chats_foreign_key: :model_id
+  def output_price_per_million
+    price(:output)
+  rescue StandardError
+    nil
+  end
 end

@@ -108,8 +108,11 @@ RSpec.describe LLM::Orchestrator do
       gemini_stub = stub_request(:post, url)
                     .with do |req|
                       body = JSON.parse(req.body)
+                      has_system_in_instruction = body.dig("systemInstruction", "parts")&.any? { |p| p["text"].include?("helpful assistant") }
+                      has_system_in_contents = body["contents"].any? { |c| c["parts"].any? { |p| p["text"].include?("helpful assistant") } }
+
                       body["contents"].none? { |c| c["role"] == "system" } &&
-                        body["contents"].any? { |c| c["parts"].any? { |p| p["text"].include?("helpful assistant") } }
+                        (has_system_in_instruction || has_system_in_contents)
                     end
                     .to_return(status: 200, body: gemini_sse, headers: { "Content-Type" => "text/event-stream" })
 

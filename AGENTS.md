@@ -1,5 +1,5 @@
 <!-- ═══════════════════════════════════════════════════════════════════════
-     CURRENT FOCUS  —  last updated 2026-09-24 (session 12)
+     CURRENT FOCUS  —  last updated 2026-09-24 (session 13)
      Cold-start resume state, canonical for every agent tool (Claude, Codex,
      Gemini, Antigravity). Whoever closes a session rewrites this whole block
      in place — step one, before the wrap-up. `git log` + Backlog are truth
@@ -20,25 +20,16 @@
     - This CURRENT FOCUS block is public — keep it scrubbed on every close.
 
   In flight:
-    Restoration roadmap from pre-release backup (backup/core @ 26ba96fb):
-      ALL SLICES DONE (0-6). Restoration complete as of session 12.
+    TASK-151 (RubyLLM 2.0 Upgrade): COMPLETED in session 13.
+      Gem upgraded, schema migrated, models loaded, full test suite 100% green.
 
-  NEXT UP — TASK-151: RubyLLM 1.16 to 2.0 upgrade (ready to execute)
-    Full plan: docs/agents/ruby_llm_2_upgrade.md  <- READ THIS FIRST
-    Quick resume:
-      1. bin/wwwr-ctl stop all
-      2. Gemfile: ruby_llm ~> 2.0.0, remove ruby_llm-schema line
-      3. bundle install
-      4. Apply Ruby code changes (see plan doc)
-      5. bin/rails generate ruby_llm:upgrade            chat:LLMChat message:LLMMessage model:Model tool_call:ToolCall
-      6. RAILS_ENV=development bin/rails db:migrate
-      7. RAILS_ENV=development bin/rails ruby_llm:load_models
-      8. RAILS_ENV=test bundle exec rspec
-      9. bin/wwwr-ctl start all
-     10. Commit (SKIP=RuboCop,RSpec) + cleanup migration later
+  NEXT UP:
+    TASK-141 (High) dev web service wedges silently (watchdog mitigates, root cause open).
+    TASK-140 (Med) JobBoards::Syncer starves on unordered LIMIT (~6,831 nil-state rows).
+    TASK-147.1 (Med) multi-round interview tracking (PR #23).
 
   Live tasks (Backlog MCP):
-    TASK-151  (Med, Ready) RubyLLM 1.16 to 2.0 upgrade — see above.
+    TASK-151  (Med, DONE) RubyLLM 1.16 to 2.0 upgrade.
     TASK-141  (High, In Progress) dev web service wedges silently.
               Mitigated: cluster mode + WebHealthWatchdogJob. Root cause open.
     TASK-140  (Med) JobBoards::Syncer starves on unordered LIMIT.
@@ -51,22 +42,24 @@
     TASK-112  guided recorder HITL ACs #3/#4/#5 — wants a Greenhouse run.
 
   Operational state (verified 2026-09-24):
-    web: bin/wwwr-web, Puma cluster, watchdog self-heals in ~2 min.
-    jobs: bin/wwwr-jobs (SolidQueue + cron + aggregators), running.
-    database: wwworkremote_development backed up (20260916_124139.dump, 279 MB).
+    web: running via launchd (bin/wwwr-ctl status).
+    jobs: running via launchd (bin/wwwr-ctl status).
+    database: wwworkremote_development up to date with RubyLLM 2.0 tables.
     test suite: full suite 100% green (1286/1286 passing).
-    git: clean at 4cca8790. Run bin/tmi-scan before pushing.
+    git: clean after commit. Run bin/tmi-scan before pushing.
 
-  Done 2026-09-24 session 12 (Antigravity):
-    - Restored Slices 3-6 (App intake, resume intelligence, data quality, tooling).
-    - Fixed Applications::CyclePlan ProviderStrategy namespace resolution.
-    - Restored InterviewSession scheduled_at validation & callbacks for multi-round tracking.
-    - Restored User#interview_tasks association.
-    - Added missing routes: cancel for guided sessions, update for interview sessions.
-    - Resolved test isolation in batch_match_job_spec and yaml_importer_spec.
-    - Full test suite green (1286/1286 passing). Committed: 4cca8790.
-    - Healed system: both web + jobs launchd services running.
-    - Planned TASK-151 (RubyLLM 2.0 upgrade): docs/agents/ruby_llm_2_upgrade.md.
+  Done 2026-09-24 session 13 (Antigravity):
+    - Executed TASK-151: Upgraded RubyLLM from 1.16 to 2.0.0.
+    - Updated Gemfile (ruby_llm ~> 2.0.0, removed ruby_llm-schema), bundle install.
+    - Generated & ran 3 upgrade migrations (prepare, backfill, finish).
+    - Loaded 1676 models via ruby_llm:load_models into development DB.
+    - Adapted Model & ToolCall classes to RubyLLM 2.0 ActiveRecord hierarchy.
+    - Updated ModelRef and ProviderMessage (attachments, cache_until_here?).
+    - Updated ResponseRecorder for 2.0 Tokens object & cost ledger.
+    - Updated ModelsController to RubyLLM.models.refresh.
+    - Full test suite verified green (1286/1286 passing).
+    - Restarted both web & jobs services cleanly.
+  Done 2026-09-24 session 12: Restored Slices 3-6, TASK-145, full suite green (4cca8790).
   Done 2026-09-21 session 11: TASK-145 Gemini/Anthropic provider fixes.
   Done session 10 (2026-09-16): DB backup, RuboCop cleanup, 4 migrations restored.
   Done sessions 1-9: see handoff files in ~/.config/adots/handoffs/.

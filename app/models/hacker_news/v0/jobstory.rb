@@ -1,28 +1,23 @@
 # frozen_string_literal: true
 
-# ## Schema Information
+# == Schema Information
 #
-# Table name: `hacker_news_v0_jobstories`
+# Table name: hacker_news_v0_jobstories
 #
-# ### Columns
+#  id         :integer          not null, primary key
+#  by         :string
+#  data       :jsonb            not null
+#  score      :integer
+#  text       :text
+#  time       :integer
+#  title      :string
+#  url        :string
+#  created_at :datetime         not null
+#  updated_at :datetime         not null
 #
-# Name              | Type               | Attributes
-# ----------------- | ------------------ | ---------------------------
-# **`id`**          | `integer`          | `not null, primary key`
-# **`by`**          | `string`           |
-# **`data`**        | `jsonb`            | `not null`
-# **`score`**       | `integer`          |
-# **`text`**        | `text`             |
-# **`time`**        | `integer`          |
-# **`title`**       | `string`           |
-# **`url`**         | `string`           |
-# **`created_at`**  | `datetime`         | `not null`
-# **`updated_at`**  | `datetime`         | `not null`
+# Indexes
 #
-# ### Indexes
-#
-# * `index_hacker_news_v0_jobstories_on_id` (_unique_):
-#     * **`id`**
+#  index_hacker_news_v0_jobstories_on_id  (id) UNIQUE
 #
 class HackerNews::V0::Jobstory < ApplicationRecord
   include PgSearch::Model

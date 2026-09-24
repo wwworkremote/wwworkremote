@@ -1,36 +1,27 @@
 # frozen_string_literal: true
 
-# ## Schema Information
+# == Schema Information
 #
-# Table name: `scenario_signatures`
+# Table name: scenario_signatures
 #
-# ### Columns
+#  id                :bigint           not null, primary key
+#  first_observed_at :datetime         not null
+#  kind              :string           not null
+#  source            :jsonb
+#  step              :string
+#  value             :string           not null
+#  created_at        :datetime         not null
+#  updated_at        :datetime         not null
+#  scenario_id       :bigint           not null
 #
-# Name                     | Type               | Attributes
-# ------------------------ | ------------------ | ---------------------------
-# **`id`**                 | `bigint`           | `not null, primary key`
-# **`first_observed_at`**  | `datetime`         | `not null`
-# **`kind`**               | `string`           | `not null`
-# **`source`**             | `jsonb`            |
-# **`step`**               | `string`           |
-# **`value`**              | `string`           | `not null`
-# **`created_at`**         | `datetime`         | `not null`
-# **`updated_at`**         | `datetime`         | `not null`
-# **`scenario_id`**        | `bigint`           | `not null`
+# Indexes
 #
-# ### Indexes
+#  idx_scenario_signatures_uniq              (scenario_id,kind,value) UNIQUE
+#  index_scenario_signatures_on_scenario_id  (scenario_id)
 #
-# * `idx_scenario_signatures_uniq` (_unique_):
-#     * **`scenario_id`**
-#     * **`kind`**
-#     * **`value`**
-# * `index_scenario_signatures_on_scenario_id`:
-#     * **`scenario_id`**
+# Foreign Keys
 #
-# ### Foreign Keys
-#
-# * `fk_rails_...`:
-#     * **`scenario_id => scenarios.id`**
+#  fk_rails_...  (scenario_id => scenarios.id)
 #
 FactoryBot.define do
   factory :scenario_signature do

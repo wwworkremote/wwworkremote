@@ -3,36 +3,28 @@
 require "rails_helper"
 
 
-# ## Schema Information
+# == Schema Information
 #
-# Table name: `application_questions`
+# Table name: application_questions
 #
-# ### Columns
+#  id             :bigint           not null, primary key
+#  answer_source  :string
+#  answer_text    :text
+#  question_text  :text
+#  created_at     :datetime         not null
+#  updated_at     :datetime         not null
+#  job_posting_id :bigint           not null
+#  user_id        :bigint           not null
 #
-# Name                  | Type               | Attributes
-# --------------------- | ------------------ | ---------------------------
-# **`id`**              | `bigint`           | `not null, primary key`
-# **`answer_source`**   | `string`           |
-# **`answer_text`**     | `text`             |
-# **`question_text`**   | `text`             |
-# **`created_at`**      | `datetime`         | `not null`
-# **`updated_at`**      | `datetime`         | `not null`
-# **`job_posting_id`**  | `bigint`           | `not null`
-# **`user_id`**         | `bigint`           | `not null`
+# Indexes
 #
-# ### Indexes
+#  index_application_questions_on_job_posting_id  (job_posting_id)
+#  index_application_questions_on_user_id         (user_id)
 #
-# * `index_application_questions_on_job_posting_id`:
-#     * **`job_posting_id`**
-# * `index_application_questions_on_user_id`:
-#     * **`user_id`**
+# Foreign Keys
 #
-# ### Foreign Keys
-#
-# * `fk_rails_...`:
-#     * **`job_posting_id => job_postings.id`**
-# * `fk_rails_...`:
-#     * **`user_id => users.id`**
+#  fk_rails_...  (job_posting_id => job_postings.id)
+#  fk_rails_...  (user_id => users.id)
 #
 RSpec.describe ApplicationQuestion do
   describe "associations" do

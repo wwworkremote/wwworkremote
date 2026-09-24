@@ -3,7 +3,7 @@
 require "rails_helper"
 
 RSpec.describe JobBoards::StrategyAgent do
-  let(:agent) { described_class.new(chat: Object.new) }
+  let(:agent) { described_class.new(chat: double("chat").as_null_object) }
   let(:company) { create(:company, name: "Acme Corp") }
   let(:job_posting) { create(:job_posting, title: "Staff Engineer", company_id: company.id, body: "Build things.") }
   let(:user_job_posting) { create(:user_job_posting, job_posting: job_posting, match_analysis: "Strong fit.") }

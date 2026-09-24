@@ -1,30 +1,24 @@
 # frozen_string_literal: true
 
-# ## Schema Information
+# == Schema Information
 #
-# Table name: `email_import_records`
+# Table name: email_import_records
 #
-# ### Columns
+#  id            :bigint           not null, primary key
+#  error_message :text
+#  file_checksum :string
+#  file_path     :string
+#  processed_at  :datetime
+#  source        :string
+#  status        :string
+#  created_at    :datetime         not null
+#  updated_at    :datetime         not null
+#  message_id    :string
 #
-# Name                 | Type               | Attributes
-# -------------------- | ------------------ | ---------------------------
-# **`id`**             | `bigint`           | `not null, primary key`
-# **`error_message`**  | `text`             |
-# **`file_checksum`**  | `string`           |
-# **`file_path`**      | `string`           |
-# **`processed_at`**   | `datetime`         |
-# **`source`**         | `string`           |
-# **`status`**         | `string`           |
-# **`created_at`**     | `datetime`         | `not null`
-# **`updated_at`**     | `datetime`         | `not null`
-# **`message_id`**     | `string`           |
+# Indexes
 #
-# ### Indexes
-#
-# * `index_email_import_records_on_file_checksum` (_unique_):
-#     * **`file_checksum`**
-# * `index_email_import_records_on_message_id`:
-#     * **`message_id`**
+#  index_email_import_records_on_file_checksum  (file_checksum) UNIQUE
+#  index_email_import_records_on_message_id     (message_id)
 #
 class EmailImportRecord < ApplicationRecord
   validates :file_checksum, presence: true, uniqueness: true

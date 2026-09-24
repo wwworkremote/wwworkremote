@@ -2,22 +2,18 @@
 
 require "rails_helper"
 
-# ## Schema Information
+# == Schema Information
 #
-# Table name: `board_queries`
+# Table name: board_queries
 #
-# ### Columns
-#
-# Name                | Type               | Attributes
-# ------------------- | ------------------ | ---------------------------
-# **`id`**            | `bigint`           | `not null, primary key`
-# **`board_name`**    | `string`           |
-# **`priority`**      | `integer`          |
-# **`query_params`**  | `json`             |
-# **`remote`**        | `boolean`          |
-# **`terms`**         | `text`             |
-# **`created_at`**    | `datetime`         | `not null`
-# **`updated_at`**    | `datetime`         | `not null`
+#  id           :bigint           not null, primary key
+#  board_name   :string
+#  priority     :integer
+#  query_params :json
+#  remote       :boolean
+#  terms        :text
+#  created_at   :datetime         not null
+#  updated_at   :datetime         not null
 #
 RSpec.describe BoardQuery do
   describe "#build_url" do

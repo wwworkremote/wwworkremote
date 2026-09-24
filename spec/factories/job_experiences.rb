@@ -1,33 +1,27 @@
 # frozen_string_literal: true
 
-# ## Schema Information
+# == Schema Information
 #
-# Table name: `job_experiences`
+# Table name: job_experiences
 #
-# ### Columns
+#  id                :bigint           not null, primary key
+#  company           :string
+#  current           :boolean
+#  description       :text
+#  end_date          :date
+#  start_date        :date
+#  title             :string
+#  created_at        :datetime         not null
+#  updated_at        :datetime         not null
+#  career_profile_id :bigint           not null
 #
-# Name                     | Type               | Attributes
-# ------------------------ | ------------------ | ---------------------------
-# **`id`**                 | `bigint`           | `not null, primary key`
-# **`company`**            | `string`           |
-# **`current`**            | `boolean`          |
-# **`description`**        | `text`             |
-# **`end_date`**           | `date`             |
-# **`start_date`**         | `date`             |
-# **`title`**              | `string`           |
-# **`created_at`**         | `datetime`         | `not null`
-# **`updated_at`**         | `datetime`         | `not null`
-# **`career_profile_id`**  | `bigint`           | `not null`
+# Indexes
 #
-# ### Indexes
+#  index_job_experiences_on_career_profile_id  (career_profile_id)
 #
-# * `index_job_experiences_on_career_profile_id`:
-#     * **`career_profile_id`**
+# Foreign Keys
 #
-# ### Foreign Keys
-#
-# * `fk_rails_...`:
-#     * **`career_profile_id => career_profiles.id`**
+#  fk_rails_...  (career_profile_id => career_profiles.id)
 #
 FactoryBot.define do
   factory :job_experience do

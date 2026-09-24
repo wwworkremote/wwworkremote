@@ -31,6 +31,5 @@
 # * `fk_rails_...`:
 #     * **`llm_message_id => llm_messages.id`**
 #
-class ToolCall < ApplicationRecord
-  acts_as_tool_call message: :llm_message, message_foreign_key: :llm_message_id
+class ToolCall < RubyLLM::ActiveRecord::ToolCall
 end

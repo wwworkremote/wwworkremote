@@ -1,27 +1,22 @@
 # frozen_string_literal: true
 
-# ## Schema Information
+# == Schema Information
 #
-# Table name: `llm_chats`
+# Table name: llm_chats
 #
-# ### Columns
+#  id                :bigint           not null, primary key
+#  cancelled         :boolean          default(FALSE), not null
+#  created_at        :datetime         not null
+#  updated_at        :datetime         not null
+#  ruby_llm_model_id :bigint
 #
-# Name              | Type               | Attributes
-# ----------------- | ------------------ | ---------------------------
-# **`id`**          | `bigint`           | `not null, primary key`
-# **`created_at`**  | `datetime`         | `not null`
-# **`updated_at`**  | `datetime`         | `not null`
-# **`model_id`**    | `bigint`           |
+# Indexes
 #
-# ### Indexes
+#  index_llm_chats_on_ruby_llm_model_id  (ruby_llm_model_id)
 #
-# * `index_llm_chats_on_model_id`:
-#     * **`model_id`**
+# Foreign Keys
 #
-# ### Foreign Keys
-#
-# * `fk_rails_...`:
-#     * **`model_id => models.id`**
+#  fk_rails_...  (ruby_llm_model_id => ruby_llm_models.id)
 #
 class LLMChat < ApplicationRecord
   include ::RubyLLM::ActiveRecord::ActsAs
