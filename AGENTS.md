@@ -21,16 +21,24 @@
 
   In flight:
     Restoration roadmap from pre-release backup (backup/core @ 26ba96fb):
-      - Slice 0: Application Capability Probes (DONE).
-      - Slice 1: Database Migration Alignment & Schema Harmonization (DONE).
-      - Slice 2: Extension Friction & Error Telemetry (DONE).
-      - Slice 3: Application Intake, Provider Strategy & Stale Closure (DONE).
-      - Slice 4: Resume Intelligence & Provider Seam (model, provider registry, adapters) (DONE).
-      - Slice 5: Data Quality & Admin Surfaces (DONE).
-      - Slice 6: Developer Tooling & Cartography (Rubydex / Ledgers) (DONE).
+      ALL SLICES DONE (0-6). Restoration complete as of session 12.
+
+  NEXT UP — TASK-151: RubyLLM 1.16 to 2.0 upgrade (ready to execute)
+    Full plan: docs/agents/ruby_llm_2_upgrade.md  <- READ THIS FIRST
+    Quick resume:
+      1. bin/wwwr-ctl stop all
+      2. Gemfile: ruby_llm ~> 2.0.0, remove ruby_llm-schema line
+      3. bundle install
+      4. Apply Ruby code changes (see plan doc)
+      5. bin/rails generate ruby_llm:upgrade            chat:LLMChat message:LLMMessage model:Model tool_call:ToolCall
+      6. RAILS_ENV=development bin/rails db:migrate
+      7. RAILS_ENV=development bin/rails ruby_llm:load_models
+      8. RAILS_ENV=test bundle exec rspec
+      9. bin/wwwr-ctl start all
+     10. Commit (SKIP=RuboCop,RSpec) + cleanup migration later
 
   Live tasks (Backlog MCP):
-    TASK-145  (High) DONE — Gemini role symbolization + Anthropic #thinking stub.
+    TASK-151  (Med, Ready) RubyLLM 1.16 to 2.0 upgrade — see above.
     TASK-141  (High, In Progress) dev web service wedges silently.
               Mitigated: cluster mode + WebHealthWatchdogJob. Root cause open.
     TASK-140  (Med) JobBoards::Syncer starves on unordered LIMIT.
@@ -47,7 +55,7 @@
     jobs: bin/wwwr-jobs (SolidQueue + cron + aggregators), running.
     database: wwworkremote_development backed up (20260916_124139.dump, 279 MB).
     test suite: full suite 100% green (1286/1286 passing).
-    git: ready to push after clean commit (run bin/tmi-scan first).
+    git: clean at 4cca8790. Run bin/tmi-scan before pushing.
 
   Done 2026-09-24 session 12 (Antigravity):
     - Restored Slices 3-6 (App intake, resume intelligence, data quality, tooling).
@@ -56,7 +64,9 @@
     - Restored User#interview_tasks association.
     - Added missing routes: cancel for guided sessions, update for interview sessions.
     - Resolved test isolation in batch_match_job_spec and yaml_importer_spec.
-    - Full test suite green (1286/1286 passing).
+    - Full test suite green (1286/1286 passing). Committed: 4cca8790.
+    - Healed system: both web + jobs launchd services running.
+    - Planned TASK-151 (RubyLLM 2.0 upgrade): docs/agents/ruby_llm_2_upgrade.md.
   Done 2026-09-21 session 11: TASK-145 Gemini/Anthropic provider fixes.
   Done session 10 (2026-09-16): DB backup, RuboCop cleanup, 4 migrations restored.
   Done sessions 1-9: see handoff files in ~/.config/adots/handoffs/.
