@@ -1,0 +1,54 @@
+<% content_for :title, "Answer library | WWWorkRemote" %>
+<div class="mb-8">
+  <div class="text-xs font-black uppercase tracking-widest text-primary">Application automation</div>
+  <h1 class="text-3xl font-black text-white">Answer library</h1>
+  <p class="mt-2 text-sm text-slate-400">Persona-specific canned answers for dynamic application questions. Nothing fills or submits from this page.</p>
+</div>
+<div class="grid gap-8 lg:grid-cols-3">
+  <section class="card-neural p-6 lg:col-span-1">
+    <h2 class="mb-4 text-xs font-black uppercase tracking-widest text-slate-500">Add canned answer</h2>
+    <%= form_with url: application_answer_templates_path, scope: :application_answer_template, class: "space-y-3" do |f| %>
+      <%= f.select :persona_id, options_for_select(@personas.map { |p| [p[:label], p[:id]] }, params[:persona_id]), { prompt: "Generic / choose persona" }, class: "select select-bordered w-full bg-black/20" %>
+      <%= f.text_field :question_kind, value: params[:question_kind], placeholder: "Question intent (e.g. contact)", class: "input input-bordered w-full bg-black/20" %>
+      <%= f.text_field :prompt, value: params[:prompt], placeholder: "Question pattern", class: "input input-bordered w-full bg-black/20" %>
+      <%= f.hidden_field :normalized_prompt, value: params[:normalized_prompt] %>
+      <%= f.text_area :answer, placeholder: "Approved answer", rows: 5, class: "textarea textarea-bordered w-full bg-black/20" %>
+      <%= f.hidden_field :source, value: "manual" %>
+      <%= f.hidden_field :enabled, value: true %>
+      <%= f.submit "Save answer", class: "btn btn-primary w-full font-bold" %>
+    <% end %>
+  </section>
+  <section class="card-neural overflow-hidden lg:col-span-2">
+    <div class="border-b border-white/5 p-6"><h2 class="text-xs font-black uppercase tracking-widest text-slate-500">Saved answers (<%= @templates.size %>)</h2></div>
+    <div class="divide-y divide-white/5">
+      <% @templates.each do |template| %>
+        <article class="p-5">
+          <div class="flex flex-wrap items-center justify-between gap-3">
+            <div class="flex flex-wrap gap-2 text-[10px] font-black uppercase tracking-widest text-slate-500"><span class="text-primary"><%= template.question_kind %></span><span><%= template.persona_id.presence || "generic" %></span><span><%= template.source %></span><span class="<%= template.enabled? ? 'text-success' : 'text-slate-600' %>"><%= template.enabled? ? "enabled" : "disabled" %></span></div>
+            <%= link_to "Edit", "#edit-answer-#{template.id}", class: "btn btn-xs btn-ghost border-white/10" %>
+          </div>
+          <p class="mt-2 text-sm font-bold text-white"><%= template.prompt %></p>
+          <p class="mt-2 text-sm text-slate-300"><%= template.answer %></p>
+          <%= form_with model: template, url: application_answer_template_path(template), method: :patch, scope: :application_answer_template, id: "edit-answer-#{template.id}", class: "mt-4 grid gap-3 border-t border-white/5 pt-4 md:grid-cols-2" do |f| %>
+            <%= f.hidden_field :question_kind %>
+            <%= f.text_field :prompt, class: "input input-sm input-bordered w-full bg-black/20", aria: { label: "Question pattern" } %>
+            <%= f.text_area :answer, rows: 2, class: "textarea textarea-sm textarea-bordered w-full bg-black/20", aria: { label: "Approved answer" } %>
+            <%= f.text_field :persona_id, placeholder: "Persona ID or blank", class: "input input-sm input-bordered w-full bg-black/20" %>
+            <label class="flex items-center gap-2 text-xs font-bold text-slate-400"><%= f.check_box :enabled, class: "checkbox checkbox-sm" %> Available to automation</label>
+            <%= f.submit "Save changes", class: "btn btn-sm btn-primary md:col-span-2" %>
+          <% end %>
+        </article>
+      <% end %>
+      <% if @templates.empty? %><p class="p-8 text-sm font-bold text-slate-500">No canned answers yet. Capture a question or add one here.</p><% end %>
+    </div>
+  </section>
+</div>
+<section class="card-neural mt-8 overflow-hidden">
+  <div class="border-b border-white/5 p-6"><h2 class="text-xs font-black uppercase tracking-widest text-warning">Pending answer coverage (<%= @pending_questions.size %>)</h2><p class="mt-1 text-xs text-slate-500">Observed questions with no enabled canned-answer template. Review wording, intent, and persona before promoting an answer.</p></div>
+  <div class="divide-y divide-white/5">
+    <% @pending_questions.each do |question| %>
+      <article class="flex flex-wrap items-center justify-between gap-4 p-5"><div><p class="text-sm font-bold text-white"><%= question.raw_prompt %></p><p class="mt-1 text-xs text-slate-500"><%= question.question_kind %> · <%= question.persona_id.presence || "generic" %> · <%= question.provider.presence || "unknown provider" %></p></div><%= link_to "Use as prompt", application_answer_templates_path(prompt: question.raw_prompt, normalized_prompt: question.normalized_prompt, question_kind: question.question_kind, persona_id: question.persona_id), class: "btn btn-xs btn-ghost border-white/10" %></article>
+    <% end %>
+    <% if @pending_questions.empty? %><p class="p-6 text-sm font-bold text-slate-500">No uncovered questions observed.</p><% end %>
+  </div>
+</section>

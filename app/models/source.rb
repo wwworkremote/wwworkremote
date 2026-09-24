@@ -1,5 +1,37 @@
 # frozen_string_literal: true
 
+# ## Schema Information
+#
+# Table name: `sources`
+#
+# ### Columns
+#
+# Name              | Type               | Attributes
+# ----------------- | ------------------ | ---------------------------
+# **`id`**          | `bigint`           | `not null, primary key`
+# **`event`**       | `jsonb`            | `not null`
+# **`payload`**     | `jsonb`            | `not null`
+# **`signature`**   | `string`           | `not null`
+# **`created_at`**  | `datetime`         | `not null`
+# **`updated_at`**  | `datetime`         | `not null`
+# **`origin_id`**   | `bigint`           |
+#
+# ### Indexes
+#
+# * `index_sources_on_event` (_using_ gin):
+#     * **`event`**
+# * `index_sources_on_origin_id`:
+#     * **`origin_id`**
+# * `index_sources_on_payload` (_using_ gin):
+#     * **`payload`**
+# * `index_sources_on_signature` (_unique_):
+#     * **`signature`**
+#
+# ### Foreign Keys
+#
+# * `fk_rails_...`:
+#     * **`origin_id => origins.id`**
+#
 class Source < ApplicationRecord
   validates :signature, presence: true, uniqueness: true
 
@@ -55,27 +87,3 @@ class Source < ApplicationRecord
   #   end
   # end
 end
-
-# == Schema Information
-#
-# Table name: sources
-#
-#  id         :bigint           not null, primary key
-#  event      :jsonb            not null
-#  payload    :jsonb            not null
-#  signature  :string           not null
-#  created_at :datetime         not null
-#  updated_at :datetime         not null
-#  origin_id  :bigint
-#
-# Indexes
-#
-#  index_sources_on_event      (event) USING gin
-#  index_sources_on_origin_id  (origin_id)
-#  index_sources_on_payload    (payload) USING gin
-#  index_sources_on_signature  (signature) UNIQUE
-#
-# Foreign Keys
-#
-#  fk_rails_...  (origin_id => origins.id)
-#

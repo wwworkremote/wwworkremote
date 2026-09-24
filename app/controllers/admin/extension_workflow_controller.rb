@@ -14,17 +14,11 @@ class Admin::ExtensionWorkflowController < Admin::ApplicationController
   def show
     @doc = File.read(DOC_PATH)
     @capture_health = capture_health
-    @friction_reports = friction_reports
+    @friction_reports = ExtensionErrorEvent.where(event_name: "friction_report").includes(:job_posting,
+                                                                                          :user_job_posting).order(occurred_at: :desc).limit(50)
   end
 
   private
-
-  def friction_reports
-    ExtensionErrorEvent.where(event_name: "friction_report")
-                       .includes(:job_posting, :user_job_posting)
-                       .order(occurred_at: :desc)
-                       .limit(50)
-  end
 
   # Per-provider rollup of the "Captured Lead" Ahoy event (see
   # Api::LeadsController#track_capture) -- aggregate extraction quality

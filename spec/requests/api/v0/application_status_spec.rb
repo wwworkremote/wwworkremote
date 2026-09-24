@@ -19,7 +19,7 @@ RSpec.describe "Api::V0::ApplicationStatus" do
       # archive is legal from none too -- lets Mike dismiss a posting he's
       # never favorited/applied to without going through the rest of the
       # pipeline first (TASK-82 phase 3).
-      expect(response.parsed_body).to include("status" => "none", "available_events" => %w[favorite apply archive])
+      expect(response.parsed_body).to include("status" => "none", "available_events" => %w[favorite apply archive skip])
     end
 
     it "reports the current status once the posting is tracked" do

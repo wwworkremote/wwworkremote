@@ -17,7 +17,14 @@ export default class extends Controller {
     if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "k") {
       event.preventDefault()
       this.open()
+    } else if (event.key === "/" && !this.isTyping(event.target)) {
+      event.preventDefault()
+      document.querySelector("#global-job-search")?.focus()
     }
+  }
+
+  isTyping(target) {
+    return ["INPUT", "TEXTAREA", "SELECT"].includes(target.tagName) || target.isContentEditable
   }
 
   open() {
@@ -87,7 +94,7 @@ export default class extends Controller {
   scoredMatches(query) {
     const q = query.toLowerCase()
     return this.indexValue
-      .map(entry => ({ entry, score: this.score(entry.label.toLowerCase(), q) }))
+      .map(entry => ({ entry, score: Math.max(this.score(entry.label.toLowerCase(), q), this.score(entry.path.toLowerCase(), q) / 2) }))
       .filter(({ score }) => score > 0)
       .sort((a, b) => b.score - a.score)
       .map(({ entry }) => entry)

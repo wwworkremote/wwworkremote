@@ -1,37 +1,44 @@
 # frozen_string_literal: true
 
-# == Schema Information
+# ## Schema Information
 #
-# Table name: work_experiences
+# Table name: `work_experiences`
 #
-#  id                :bigint           not null, primary key
-#  action            :text
-#  company_name      :string
-#  context           :text
-#  description       :text
-#  embedding         :vector(768)
-#  employment_type   :string
-#  end_date          :date
-#  impact            :text
-#  location          :string
-#  scope             :jsonb
-#  skills            :text
-#  start_date        :date
-#  summary           :text
-#  title             :string
-#  created_at        :datetime         not null
-#  updated_at        :datetime         not null
-#  career_profile_id :bigint           not null
-#  external_id       :string
+# ### Columns
 #
-# Indexes
+# Name                     | Type               | Attributes
+# ------------------------ | ------------------ | ---------------------------
+# **`id`**                 | `bigint`           | `not null, primary key`
+# **`action`**             | `text`             |
+# **`company_name`**       | `string`           |
+# **`context`**            | `text`             |
+# **`description`**        | `text`             |
+# **`embedding`**          | `vector(768)`      |
+# **`employment_type`**    | `string`           |
+# **`end_date`**           | `date`             |
+# **`impact`**             | `text`             |
+# **`location`**           | `string`           |
+# **`scope`**              | `jsonb`            |
+# **`skills`**             | `text`             |
+# **`start_date`**         | `date`             |
+# **`summary`**            | `text`             |
+# **`title`**              | `string`           |
+# **`created_at`**         | `datetime`         | `not null`
+# **`updated_at`**         | `datetime`         | `not null`
+# **`career_profile_id`**  | `bigint`           | `not null`
+# **`external_id`**        | `string`           |
 #
-#  index_work_experiences_on_career_profile_id  (career_profile_id)
-#  index_work_experiences_on_external_id        (external_id)
+# ### Indexes
 #
-# Foreign Keys
+# * `index_work_experiences_on_career_profile_id`:
+#     * **`career_profile_id`**
+# * `index_work_experiences_on_external_id`:
+#     * **`external_id`**
 #
-#  fk_rails_...  (career_profile_id => career_profiles.id)
+# ### Foreign Keys
+#
+# * `fk_rails_...`:
+#     * **`career_profile_id => career_profiles.id`**
 #
 class WorkExperience < ApplicationRecord
   belongs_to :career_profile

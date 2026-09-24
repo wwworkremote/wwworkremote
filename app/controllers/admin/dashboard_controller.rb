@@ -4,6 +4,8 @@ class Admin::DashboardController < Admin::ApplicationController
   def index
     assign_counts
     @pipelines_paused = SystemSetting.paused?
+    @data_quality_findings = DataQuality::Audit.call
+    @top_data_quality_finding = @data_quality_findings.first
     # Recent ingestion for ticker feed (initial load)
     @recent_ingestions = JobPosting.includes(:source).order(created_at: :desc).limit(10)
   end

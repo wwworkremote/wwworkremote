@@ -57,6 +57,50 @@ module JobPostingsHelper
 
   public
 
+  PIPELINE_EVENT_NAMES = {
+    "favorite" => "Saved for review",
+    "apply" => "Application marked applied",
+    "interview" => "Moved into interview stage",
+    "archive" => "Archived from active search",
+    "closed" => "Employer response closed"
+  }.freeze
+
+  def pipeline_step_title(step)
+    PIPELINE_EVENT_NAMES.fetch(step.status, step.status.humanize)
+  end
+
+  def pipeline_step_summary(step, posting)
+    return step.note if step.note.present?
+
+    company = posting.company_name.presence || posting.company&.name || "this employer"
+    case step.status
+    when "favorite" then "You added #{posting.title.presence || 'this role'} at #{company} to the active search."
+    when "apply" then "Application activity was recorded; inspect the receipt before treating submission as final."
+    when "interview" then "You moved this application into interview tracking."
+    when "archive" then "You removed this role from the active board; history remains available."
+    else "Pipeline activity recorded for #{company}."
+    end
+  end
+
+  def guided_session_summary(session, _posting)
+    provider = session.provider.presence || "unknown provider"
+    "#{session.purpose.humanize} on #{provider}; status: #{session.status}."
+  end
+
+  def guided_session_receipt_label(session)
+    "Open guided-session receipt ##{session.id}"
+  end
+
+  def guided_event_title(event)
+    event.action.to_s.tr("_", " ").capitalize.presence || event.kind.to_s.humanize
+  end
+
+  def guided_event_summary(event)
+    parts = [event.intent.presence, "phase: #{event.phase}", "#{event.approval_state} approval"]
+    parts << event.reversibility.to_s if event.reversibility.present?
+    parts.compact.join(" · ")
+  end
+
   ANSWER_SOURCE_BADGE_CLASSES = {
     "canned" => "border-success/40 text-success",
     "submitted" => "border-info/40 text-info",
@@ -84,8 +128,10 @@ module JobPostingsHelper
     pipeline_favorited: "border-primary/40 text-primary",
     pipeline_applied: "border-info/40 text-info",
     pipeline_interview: "border-accent/40 text-accent",
-    pipeline_archived: "border-white/20 text-slate-400"
+    pipeline_archived: "border-white/20 text-slate-400",
+    pipeline_skipped: "border-white/10 text-slate-400"
   }.freeze
+
 
   # Badge-outline styling for Pipeline::DisplayStatus's result -- [css,
   # label] or nil, matching answer_source_badge's shape above.

@@ -12,7 +12,7 @@
 <div id="friction-reports" class="card-neural p-8 mb-12">
   <h3 class="text-xs font-bold text-slate-500 mb-1">Reported friction</h3>
   <p class="text-slate-600 text-xs mb-4">Extension reports are durable workflow context for fixing extraction and guided application paths.</p>
-  <% @friction_reports&.each do |report| %>
+  <% @friction_reports.each do |report| %>
     <div class="border-t border-white/10 py-4 text-xs">
       <div class="flex justify-between gap-4 font-bold text-white"><span><%= report.error_message %></span><time datetime="<%= report.occurred_at.iso8601 %>"><%= report.occurred_at.strftime("%b %-d, %H:%M:%S") %></time></div>
       <div class="text-slate-500 mt-1"><%= [report.status.humanize, report.provider, report.phase, report.page_host, report.guided_session_token].compact.join(" · ") %></div>

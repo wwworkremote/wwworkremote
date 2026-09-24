@@ -10,7 +10,7 @@ require "yaml"
 require "open3"
 
 root = File.expand_path("..", __dir__)
-config_path = ENV["TMI_DENYLIST"] || File.join(root, "config/tmi_denylist.yml")
+config_path = File.join(root, "config/tmi_denylist.yml")
 config_path = File.join(root, "config/tmi_denylist.yml.example") unless File.exist?(config_path)
 
 unless File.exist?(config_path)

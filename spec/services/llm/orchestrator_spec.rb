@@ -7,6 +7,15 @@ RSpec.describe LLM::Orchestrator do
   let(:model_id) { "llama3.2:latest" }
   let!(:model) { create(:model, model_id: model_id, provider: "ollama") }
 
+  let(:gemini_model) do
+    Model.find_by(model_id: "gemini-3.7-flash") ||
+      create(:model, model_id: "gemini-3.7-flash", provider: "gemini")
+  end
+  let(:gemini_sse) do
+    "data: {\"candidates\":[{\"content\":{\"parts\":[{\"text\":\"Screening answer text\"}],\"role\":\"model\"}}]," \
+      "\"usageMetadata\":{\"promptTokenCount\":20,\"candidatesTokenCount\":10}}\n\n"
+  end
+
   before do
     allow(LLM::Registry).to receive(:default_model).and_return(model)
   end
@@ -91,6 +100,29 @@ RSpec.describe LLM::Orchestrator do
 
       expect(result[:success]).to be false
       expect(result[:error]).to include("Output guardrail flagged response")
+    end
+
+    # rubocop:disable-next RSpec/ExampleLength
+    it "succeeds with Gemini provider mapping system rules without sending unsupported system role" do
+      url = %r{generativelanguage\.googleapis\.com/.*/models/gemini-3\.7-flash:streamGenerateContent}
+      gemini_stub = stub_request(:post, url)
+                    .with do |req|
+                      body = JSON.parse(req.body)
+                      body["contents"].none? { |c| c["role"] == "system" } &&
+                        body["contents"].any? { |c| c["parts"].any? { |p| p["text"].include?("helpful assistant") } }
+                    end
+                    .to_return(status: 200, body: gemini_sse, headers: { "Content-Type" => "text/event-stream" })
+
+      result = described_class.call(
+        untrusted_text: untrusted_text,
+        system_rules: "You are a helpful assistant.",
+        metadata: {},
+        model: gemini_model
+      )
+
+      expect(result[:success]).to be true
+      expect(result[:output]).to eq("Screening answer text")
+      expect(gemini_stub).to have_been_requested
     end
   end
 end

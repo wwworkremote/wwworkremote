@@ -1,56 +1,72 @@
 # frozen_string_literal: true
 
-# == Schema Information
-#
-# Table name: user_job_postings
-#
-#  id                               :bigint           not null, primary key
-#  application_profile_snapshot     :jsonb            not null
-#  applied_at                       :datetime
-#  cover_letter                     :text
-#  follow_up_at                     :datetime
-#  interview_prep_pack              :text
-#  interview_prep_pack_generated_at :datetime
-#  interview_prep_pack_spoken       :text
-#  match_analysis                   :text
-#  match_score                      :integer
-#  match_tags                       :text             default([]), not null, is an Array
-#  notes                            :text
-#  outcome                          :string
-#  outcome_at                       :datetime
-#  outcome_reason                   :text
-#  outcome_source                   :string
-#  priority_flag                    :boolean
-#  resume_persona_snapshot          :jsonb            not null
-#  status                           :string
-#  strategy                         :jsonb            not null
-#  created_at                       :datetime         not null
-#  updated_at                       :datetime         not null
-#  application_trace_id             :string
-#  job_posting_id                   :bigint           not null
-#  job_search_id                    :bigint
-#  resume_persona_id                :string
-#  user_id                          :bigint           not null
-#
-# Indexes
-#
-#  index_user_job_postings_on_application_trace_id  (application_trace_id)
-#  index_user_job_postings_on_applied_at            (applied_at)
-#  index_user_job_postings_on_follow_up_at          (follow_up_at)
-#  index_user_job_postings_on_job_posting_id        (job_posting_id)
-#  index_user_job_postings_on_job_search_id         (job_search_id)
-#  index_user_job_postings_on_match_score           (match_score)
-#  index_user_job_postings_on_outcome               (outcome)
-#  index_user_job_postings_on_user_id               (user_id)
-#
-# Foreign Keys
-#
-#  fk_rails_...  (job_posting_id => job_postings.id)
-#  fk_rails_...  (job_search_id => job_searches.id)
-#  fk_rails_...  (user_id => users.id)
-#
 require "rails_helper"
 
+
+# ## Schema Information
+#
+# Table name: `user_job_postings`
+#
+# ### Columns
+#
+# Name                                    | Type               | Attributes
+# --------------------------------------- | ------------------ | ---------------------------
+# **`id`**                                | `bigint`           | `not null, primary key`
+# **`application_profile_snapshot`**      | `jsonb`            | `not null`
+# **`applied_at`**                        | `datetime`         |
+# **`cover_letter`**                      | `text`             |
+# **`follow_up_at`**                      | `datetime`         |
+# **`interview_prep_pack`**               | `text`             |
+# **`interview_prep_pack_generated_at`**  | `datetime`         |
+# **`interview_prep_pack_spoken`**        | `text`             |
+# **`match_analysis`**                    | `text`             |
+# **`match_score`**                       | `integer`          |
+# **`match_tags`**                        | `text`             | `default([]), not null, is an Array`
+# **`notes`**                             | `text`             |
+# **`outcome`**                           | `string`           |
+# **`outcome_at`**                        | `datetime`         |
+# **`outcome_reason`**                    | `text`             |
+# **`outcome_source`**                    | `string`           |
+# **`priority_flag`**                     | `boolean`          |
+# **`resume_persona_snapshot`**           | `jsonb`            | `not null`
+# **`status`**                            | `string`           |
+# **`strategy`**                          | `jsonb`            | `not null`
+# **`created_at`**                        | `datetime`         | `not null`
+# **`updated_at`**                        | `datetime`         | `not null`
+# **`application_trace_id`**              | `string`           |
+# **`job_posting_id`**                    | `bigint`           | `not null`
+# **`job_search_id`**                     | `bigint`           |
+# **`resume_persona_id`**                 | `string`           |
+# **`user_id`**                           | `bigint`           | `not null`
+#
+# ### Indexes
+#
+# * `index_user_job_postings_on_application_trace_id`:
+#     * **`application_trace_id`**
+# * `index_user_job_postings_on_applied_at`:
+#     * **`applied_at`**
+# * `index_user_job_postings_on_follow_up_at`:
+#     * **`follow_up_at`**
+# * `index_user_job_postings_on_job_posting_id`:
+#     * **`job_posting_id`**
+# * `index_user_job_postings_on_job_search_id`:
+#     * **`job_search_id`**
+# * `index_user_job_postings_on_match_score`:
+#     * **`match_score`**
+# * `index_user_job_postings_on_outcome`:
+#     * **`outcome`**
+# * `index_user_job_postings_on_user_id`:
+#     * **`user_id`**
+#
+# ### Foreign Keys
+#
+# * `fk_rails_...`:
+#     * **`job_posting_id => job_postings.id`**
+# * `fk_rails_...`:
+#     * **`job_search_id => job_searches.id`**
+# * `fk_rails_...`:
+#     * **`user_id => users.id`**
+#
 RSpec.describe UserJobPosting do
   describe "associations" do
     it { is_expected.to belong_to(:user) }
@@ -66,6 +82,30 @@ RSpec.describe UserJobPosting do
 
     it "can transition to favorited" do
       user_job_posting.status = "none"
+      expect(user_job_posting.favorite).to be true
+      expect(user_job_posting.status).to eq("favorited")
+    end
+
+    it "can unfavorite from favorited back to none" do
+      user_job_posting.status = "favorited"
+      expect(user_job_posting.unfavorite).to be true
+      expect(user_job_posting.status).to eq("none")
+    end
+
+    it "can skip from none to skipped" do
+      user_job_posting.status = "none"
+      expect(user_job_posting.skip).to be true
+      expect(user_job_posting.status).to eq("skipped")
+    end
+
+    it "can unskip from skipped back to none" do
+      user_job_posting.status = "skipped"
+      expect(user_job_posting.unskip).to be true
+      expect(user_job_posting.status).to eq("none")
+    end
+
+    it "can favorite directly from skipped" do
+      user_job_posting.status = "skipped"
       expect(user_job_posting.favorite).to be true
       expect(user_job_posting.status).to eq("favorited")
     end

@@ -23,7 +23,7 @@ TASK-112 (guided recorder AC#2-5), TASK-113 (question knowledge graph), and Pano
 
 ## Notes
 
-Domain: `wwworkremote/core` guided-session + signature-registry + question-graph
+Domain: `wwworkremote/wwworkremote` guided-session + signature-registry + question-graph
 subsystems. Skills every session consults: grilling, domain-modeling. Standing constraints:
 **Bounded Agency** (advisory only -- nothing charted here authorizes, fills, or submits an
 application); **Intent Is First-Class**; the raw datalake layer is **machine-local,

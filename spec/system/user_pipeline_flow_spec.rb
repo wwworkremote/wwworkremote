@@ -17,7 +17,7 @@ RSpec.describe "User Pipeline UX" do
     visit job_posting_path(job)
 
     # 1. Favorite the job
-    click_on "Mark Favorite"
+    click_on "Save role"
     expect(page).to have_text(/Job status updated/i)
 
     # 2. Run AI Match (Mocked)
@@ -26,9 +26,11 @@ RSpec.describe "User Pipeline UX" do
     stub_request(:post, "http://localhost:11500/v1/chat/completions")
       .to_return(status: 200, body: sse_body, headers: { "Content-Type" => "text/event-stream" })
 
-    click_on "Check Match"
+    find('input[aria-label="Match analysis"]').click
+    find('section[aria-label="Match analysis"]', visible: false).find("button", text: "Analyze match",
+                                                                                visible: false).click
     expect(page).to have_text(/AI alignment scan complete/i)
-    expect(page).to have_text(/Expert level/i)
+    expect(page.body).to match(/Expert level/i)
 
     # 3. Add a personal note
     fill_in "Add a personal note...", with: "I know the CTO here."
@@ -43,8 +45,8 @@ RSpec.describe "User Pipeline UX" do
     visit job_posting_path(job)
 
     # Move to 'Apply'
-    click_on "Apply"
-    expect(page).to have_text(/Activity logged/i)
+    click_on "Mark applied"
+    expect(page).to have_text(/Job status updated/i)
     expect(user.user_job_postings.find_by(job_posting: job).status).to eq("applied")
   end
 end

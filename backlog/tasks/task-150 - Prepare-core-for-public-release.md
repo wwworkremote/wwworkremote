@@ -15,7 +15,7 @@ ordinal: 100
 ## Description
 
 <!-- SECTION:DESCRIPTION:BEGIN -->
-TOP PRIORITY. Full prep to make wwworkremote/core public and "proud to publish" — everything EXCEPT the visibility flip, which Mike holds.
+TOP PRIORITY. Full prep to make wwworkremote/wwworkremote public and "proud to publish" — everything EXCEPT the visibility flip, which Mike holds.
 
 Plan (approved): /Users/mike/.claude/plans/silly-baking-hennessy.md
 Deep handoff: ~/.config/adots/handoffs/2026-09-04-wwworkremote-session6.md
@@ -92,7 +92,7 @@ Needs Phase 0 done + Phase 1 merged + PRs #23/#24 merged-or-closed first.
 6. Verify: `git log --all -p | grep -iE '<denylist>'` empty; `git rev-list --all --objects | grep -E 'data/backups|data/backfills|corpus\.json|\.env$'` empty
 
 ## Phase 4 — The flip RUNBOOK (WRITE IT, DO NOT RUN IT — Mike triggers)
-- `gh repo edit wwworkremote/core --visibility public --accept-visibility-change-consequences`
+- `gh repo edit wwworkremote/wwworkremote --visibility public --accept-visibility-change-consequences`
 - set description/homepage(just3ws.com)/topics
 - pin core on org; push .github profile README
 - `gh repo archive` stale private org repos: dashboard (2023), ops/binder/actions (2021)

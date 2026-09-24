@@ -1,23 +1,30 @@
 # frozen_string_literal: true
 
-# == Schema Information
+# ## Schema Information
 #
-# Table name: reference_scenarios
+# Table name: `reference_scenarios`
 #
-#  id          :bigint           not null, primary key
-#  provider    :string           not null
-#  created_at  :datetime         not null
-#  updated_at  :datetime         not null
-#  scenario_id :bigint           not null
+# ### Columns
 #
-# Indexes
+# Name               | Type               | Attributes
+# ------------------ | ------------------ | ---------------------------
+# **`id`**           | `bigint`           | `not null, primary key`
+# **`provider`**     | `string`           | `not null`
+# **`created_at`**   | `datetime`         | `not null`
+# **`updated_at`**   | `datetime`         | `not null`
+# **`scenario_id`**  | `bigint`           | `not null`
 #
-#  index_reference_scenarios_on_provider     (provider) UNIQUE
-#  index_reference_scenarios_on_scenario_id  (scenario_id) UNIQUE
+# ### Indexes
 #
-# Foreign Keys
+# * `index_reference_scenarios_on_provider` (_unique_):
+#     * **`provider`**
+# * `index_reference_scenarios_on_scenario_id` (_unique_):
+#     * **`scenario_id`**
 #
-#  fk_rails_...  (scenario_id => scenarios.id)
+# ### Foreign Keys
+#
+# * `fk_rails_...`:
+#     * **`scenario_id => scenarios.id`**
 #
 class ReferenceScenario < ApplicationRecord
   belongs_to :scenario

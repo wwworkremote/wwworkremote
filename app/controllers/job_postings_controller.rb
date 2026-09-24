@@ -3,36 +3,63 @@
 class JobPostingsController < ApplicationController
   include JobPostingFiltering
 
-  # Flat inline-edit-form fields (TASK-148). The jsonb-backed and array-backed
-  # ones (remote, salary, employment_type, countries_text, tags_text) are
-  # virtual accessors on JobPosting that translate to `data` / `tags`.
-  EDIT_FIELDS = %i[title company_name location target_url published_at employment_type
-                   remote salary_min salary_max currency countries_text tags_text].freeze
-
   # Lets "Not Interested"/"Expired" redirect back to wherever triage started.
-  before_action(only: %i[show update]) { @return_to = safe_return_path(request.referer) }
+  before_action(only: :show) { @return_to = safe_return_path(request.referer) }
 
   def index
     assign_filter_params
     @job_postings = filtered_job_postings.page(params[:page]).per(20)
   end
 
-  def show
-    @job_posting = find_job_posting
-    ahoy.track "Viewed Job Posting", job_posting_id: @job_posting.id, title: @job_posting.title
-    @friction_reports = load_friction_reports(@job_posting)
+  def feed
+    assign_filter_params
+    @job_postings = filtered_job_postings.except(:includes)
+                                         .left_joins(:company)
+                                         .select("job_postings.*, COALESCE(job_postings.company_name, companies.name) AS feed_company_name")
+                                         .limit(50)
+    render formats: :rss
   end
 
-  # Corrects scraped-data damage inline from the show page (TASK-86, widened by
-  # TASK-148). Everything here is user-corrected scrape output. Deliberately
-  # excludes :status: writing that column directly would skip the AASM guards,
-  # same reason UserJobPosting's update already refuses it. A typo fix and a
-  # pipeline transition are different actions and must stay different code paths.
-  def update
-    @job_posting = JobPosting.find(params.expect(:id))
-    return render_edit_errors unless @job_posting.update(job_posting_params)
+  def show
+    @job_posting = JobPosting.includes(:contacts, source: :origin).find(params.expect(:id))
+    ahoy.track "Viewed Job Posting", job_posting_id: @job_posting.id, title: @job_posting.title
+    @application_receipt = PipelineStep.where(user_id: current_user.id, job_posting_id: @job_posting.id,
+                                              status: "apply")
+                                       .where.not(link: [nil, ""])
+                                       .order(created_at: :desc).first
+    @friction_reports = ExtensionErrorEvent.where(job_posting: @job_posting,
+                                                  event_name: "friction_report").order(occurred_at: :desc).limit(20)
+    @personas = Resume::PersonaContext.personas
+  rescue StandardError => e
+    Rails.logger.warn("[JobPostingsController] persona list unavailable: #{e.class}: #{e.message}")
+    @personas = []
+  end
 
-    redirect_to job_posting_path(@job_posting), notice: "Posting updated."
+  def select_persona
+    job_posting = JobPosting.find(params.expect(:id))
+    application = current_user.user_job_postings.find_or_create_by!(job_posting: job_posting)
+    context = Resume::PersonaContext.call(params.expect(:persona_id))
+    application.update!(resume_persona_id: context.fetch("id"), resume_persona_snapshot: context)
+    redirect_to job_posting_path(job_posting), notice: "Role persona selected for this application."
+  rescue KeyError => e
+    redirect_to job_posting_path(job_posting), alert: e.message
+  end
+
+  def application_cycle
+    job_posting = JobPosting.find(params.expect(:id))
+    application = current_user.user_job_postings.find_or_initialize_by(job_posting: job_posting)
+    render json: Applications::CyclePlan.call(application)
+  end
+
+  # Corrects scraped-data damage (a truncated title, a blank company_name) --
+  # TASK-86. Deliberately excludes :status: writing that column directly would
+  # skip the AASM guards, same reason UserJobPosting's update already refuses
+  # it. A typo fix and a pipeline transition are different actions and must
+  # stay different code paths.
+  def update
+    job_posting = JobPosting.find(params.expect(:id))
+    job_posting.update!(job_posting_params)
+    redirect_to job_posting_path(job_posting), notice: "Posting updated."
   end
 
   def reformat
@@ -64,13 +91,8 @@ class JobPostingsController < ApplicationController
     current_user.user_job_postings.find_or_create_by!(job_posting: job_posting).record_status_event!("favorite")
   end
 
-  def render_edit_errors
-    @editing = params[:section].presence || "core"
-    render :show, status: :unprocessable_content
-  end
-
   def job_posting_params
-    params.expect(job_posting: EDIT_FIELDS)
+    params.expect(job_posting: %i[title company_name location])
   end
 
   def mark_reformatting!(job_posting)
@@ -83,14 +105,5 @@ class JobPostingsController < ApplicationController
       ActionView::RecordIdentifier.dom_id(job_posting, :description),
       partial: "job_postings/description", locals: { job_posting: job_posting }
     )
-  end
-
-  def find_job_posting
-    JobPosting.includes(:contacts, source: :origin).find(params.expect(:id))
-  end
-
-  def load_friction_reports(posting)
-    ExtensionErrorEvent.where(job_posting: posting, event_name: "friction_report")
-                       .order(occurred_at: :desc).limit(20)
   end
 end

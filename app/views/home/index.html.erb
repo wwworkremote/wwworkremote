@@ -1,22 +1,49 @@
-<div class="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-12 rounded-2xl border border-white/5 px-8 py-10 md:px-10 bg-cover bg-[right_-2rem_top_-1rem]"
-     style="background-image: linear-gradient(to right, rgba(26,27,47,0.94) 30%, rgba(26,27,47,0.55)), url('<%= asset_path("kanagawa-wave.jpg") %>');">
-  <div>
-    <h1 class="text-4xl font-black tracking-tight text-white mb-2"><%= t('.title') %></h1>
-    <p class="text-base-content/70 font-bold text-sm"><%= t('.subtitle') %></p>
-  </div>
-  <div class="flex gap-4">
-    <%= link_to career_profile_path, class: "btn btn-outline btn-sm rounded-lg font-bold text-sm" do %>
-      <%= heroicon "user-circle", options: { class: "w-4 h-4" } %> <%= t('.edit_profile') %>
-    <% end %>
-    <%= link_to data_fetchers_path, class: "btn btn-primary btn-sm rounded-lg font-bold text-sm" do %>
-      <%= heroicon "cpu-chip", options: { class: "w-4 h-4" } %> <%= t('.data_sources_cta') %>
+<% next_action_path = @next_action[:path] || job_posting_path(@next_action[:job]) %>
+<header class="mb-8">
+  <div class="flex flex-col lg:flex-row lg:items-end justify-between gap-5">
+    <div>
+      <div class="text-xs font-black uppercase tracking-widest text-primary mb-2"><%= t('.today.eyebrow') %></div>
+      <h1 class="text-3xl sm:text-4xl font-black tracking-tight text-white"><%= t('.today.title') %></h1>
+    </div>
+    <%= link_to next_action_path, class: "btn btn-primary rounded-lg font-black text-sm" do %>
+      <%= heroicon "arrow-right", options: { class: "w-4 h-4" } %> <%= @next_action[:label] %>
     <% end %>
   </div>
-</div>
+  <nav aria-label="Job search queues" class="flex flex-wrap gap-2 mt-5">
+    <%= link_to job_posting_triage_path, class: "badge badge-outline border-warning/30 text-warning p-4 font-bold" do %><%= @untriaged_count %> <%= t('.today.triage') %><% end %>
+    <%= link_to job_postings_path(status: 'interested'), class: "badge badge-outline border-accent/30 text-accent p-4 font-bold" do %><%= @priority_inbox.count %> <%= t('.today.review') %><% end %>
+    <%= link_to user_job_postings_path(status: 'applied'), class: "badge badge-outline border-secondary/30 text-secondary p-4 font-bold" do %><%= @active_applications_count %> <%= t('.today.applications') %><% end %>
+    <%= link_to user_job_postings_path(status: 'idle', sort: 'oldest'), class: "badge badge-outline border-info/30 text-info p-4 font-bold" do %><%= @idle_followups.count %> <%= t('.today.follow_up') %><% end %>
+  </nav>
+  <p class="text-sm text-slate-400 mt-4"><%= @next_action[:job]&.company_name %><%= " · " if @next_action[:job]&.company_name.present? %><%= @next_action[:reason] %></p>
+</header>
+
+<section aria-labelledby="quick-intake" class="mb-10 rounded-2xl border border-primary/30 bg-primary/5 p-5">
+  <h2 id="quick-intake" class="text-sm font-black uppercase tracking-widest text-primary">Add a job URL</h2>
+  <p class="mt-2 text-xs text-slate-400">Paste a posting URL. WWWorkRemote will capture, match, and prepare the next safe step.</p>
+  <%= form_with url: job_intakes_path, method: :post, class: "mt-4 flex flex-col sm:flex-row gap-2", role: "form" do |form| %>
+    <%= form.url_field :url, required: true, placeholder: "https://company.com/jobs/role", aria: { label: "Job posting URL" }, class: "input input-lg flex-1 bg-base-200 border-white/10 text-white font-bold placeholder:text-slate-500 focus:border-primary" %>
+    <%= form.submit "Add and shepherd", class: "btn btn-primary btn-lg rounded-lg font-black" %>
+  <% end %>
+</section>
+
+<section aria-labelledby="daily-mission" class="mb-10 max-w-3xl rounded-2xl border border-warning/20 bg-warning/5 p-5">
+  <div class="flex items-center justify-between gap-4 mb-3">
+    <h2 id="daily-mission" class="text-xs font-black uppercase tracking-widest text-warning">Get a job: today’s move</h2>
+    <span class="text-sm font-black text-white tabular-nums"><%= [@daily_progress[:completed], @daily_progress[:target]].min %>/<%= @daily_progress[:target] %> actions</span>
+  </div>
+  <div class="h-2 rounded-full bg-base-300 overflow-hidden" aria-label="Daily mission progress">
+    <div class="h-full bg-warning" style="width: <%= [@daily_progress[:completed].fdiv(@daily_progress[:target]) * 100, 100].min %>%"></div>
+  </div>
+  <div class="flex flex-wrap items-center justify-between gap-3 mt-3">
+    <p class="text-xs text-slate-400"><%= @daily_progress[:next] %>. Progress counts movement toward an offer—not passive browsing or ingestion.</p>
+    <%= link_to "Play next move →", @daily_progress[:path], class: "text-xs font-black text-warning hover:text-white" %>
+  </div>
+</section>
 
 <!-- Funnel Health (TASK-81): the narrowest point in the funnel, not the
      healthiest -- deliberately 3 numbers, no chart. -->
-<div class="flex flex-wrap items-center gap-x-10 gap-y-3 mb-12 px-2">
+<div class="flex flex-wrap items-center gap-x-10 gap-y-3 mb-10 px-2">
   <div>
     <div class="text-2xl font-black text-warning tabular-nums">
       <%= @last_application_at ? distance_of_time_in_words(@last_application_at, Time.current) : t('.funnel_health.never') %>
@@ -33,123 +60,64 @@
       <div class="text-xs font-bold text-slate-500 uppercase tracking-wider"><%= t('.funnel_health.oldest_untriaged') %></div>
     </div>
   <% end %>
+  <%= link_to job_posting_triage_path, class: "btn btn-ghost btn-sm text-primary font-bold" do %>
+    <%= t('.funnel_health.open_triage') %> <%= heroicon "arrow-right", variant: :outline, options: { class: "w-4 h-4" } %>
+  <% end %>
 </div>
+
+<!-- Primary workspace shortcuts -->
+<nav aria-label="Job search shortcuts" class="flex flex-wrap items-center gap-x-6 gap-y-2 mb-10 px-2 text-sm font-bold">
+  <%= link_to job_postings_path, class: "inline-flex items-center gap-2 text-primary hover:text-white transition-colors" do %>
+    <%= heroicon "briefcase", variant: :outline, options: { class: "w-4 h-4" } %> <%= t('.shortcuts.browse_jobs') %>
+  <% end %>
+
+  <%= link_to user_job_postings_path, class: "inline-flex items-center gap-2 text-secondary hover:text-white transition-colors" do %>
+    <%= heroicon "bookmark", variant: :outline, options: { class: "w-4 h-4" } %> <%= t('.shortcuts.saved_jobs') %>
+  <% end %>
+
+  <%= link_to user_job_postings_path(view: "board"), class: "inline-flex items-center gap-2 text-accent hover:text-white transition-colors" do %>
+    <%= heroicon "squares-2x2", variant: :outline, options: { class: "w-4 h-4" } %> Job Board
+  <% end %>
+
+  <%= link_to admin_root_path, class: "inline-flex items-center gap-2 text-base-content/50 hover:text-white transition-colors" do %>
+    <%= heroicon "adjustments-horizontal", variant: :outline, options: { class: "w-4 h-4" } %> <%= t('.shortcuts.operations') %>
+  <% end %>
+  <%= link_to feed_job_postings_path, class: "inline-flex items-center gap-2 text-base-content/50 hover:text-white transition-colors", type: "application/rss+xml" do %>
+    <%= heroicon "rss", variant: :outline, options: { class: "w-4 h-4" } %> Subscribe to RSS
+  <% end %>
+</nav>
+
+<section aria-labelledby="homepage-search-heading" class="mb-10 max-w-3xl">
+  <h2 id="homepage-search-heading" class="text-xs font-black uppercase tracking-widest text-base-content/60 mb-3"><%= t('.search.heading') %></h2>
+  <%= form_with url: job_postings_path, method: :get, role: "search", class: "flex flex-col sm:flex-row gap-2" do |form| %>
+    <%= form.search_field :q, placeholder: t('.search.placeholder'), aria: { label: t('.search.heading') }, class: "input input-lg flex-1 bg-base-200 border-white/10 text-white font-bold placeholder:text-slate-500 focus:border-primary" %>
+    <%= form.submit t('.search.submit'), class: "btn btn-primary btn-lg rounded-lg font-black" %>
+  <% end %>
+  <p class="text-xs text-slate-500 mt-2"><%= t('.search.helper').sub('/', '<kbd class="kbd kbd-xs">/</kbd>').html_safe %></p>
+</section>
+
+<% if @upcoming_interviews.any? %>
+  <section aria-labelledby="upcoming-interviews" class="mb-10">
+    <div class="flex items-center gap-4 mb-4">
+      <h2 id="upcoming-interviews" class="text-sm font-black uppercase tracking-widest text-secondary">Upcoming interviews</h2>
+      <div class="h-px flex-1 bg-secondary/20"></div>
+      <span class="badge badge-secondary badge-xs font-black"><%= @upcoming_interviews.count %></span>
+    </div>
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      <% @upcoming_interviews.each do |interview| %>
+        <%= link_to job_posting_path(interview.job_posting), class: "card bg-base-200 border border-secondary/20 p-4 hover:border-secondary transition-colors" do %>
+          <div class="text-xs font-bold text-slate-400"><%= interview.job_posting.company_name.presence || interview.job_posting.company&.name || "Unknown company" %></div>
+          <div class="font-black text-white mt-1"><%= interview.job_posting.title %></div>
+          <div class="text-xs font-bold text-secondary mt-3"><%= interview.session_type.humanize %> · <%= interview.scheduled_at.strftime("%b %-d, %H:%M") %></div>
+        <% end %>
+      <% end %>
+    </div>
+  </section>
+<% end %>
 
 <%= turbo_stream_from "system_telemetry" %>
 
 <div class="grid grid-cols-1 gap-12">
-  <!-- Interviews Block: in-flight interview processes, each linking to its prep pack -->
-  <% if @interview_processes.any? %>
-    <section>
-      <div class="flex items-center gap-4 mb-6">
-        <h2 class="text-sm font-black uppercase tracking-widest text-error"><%= t('.interviews.heading') %></h2>
-        <div class="h-px flex-1 bg-error/20"></div>
-        <span class="badge badge-error badge-xs font-black"><%= @interview_processes.count %></span>
-      </div>
-
-      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        <% @interview_processes.each do |process| %>
-          <% job = process.posting %>
-          <% round = process.current %>
-          <div class="card bg-base-200 border border-error/20 hover:border-error/60 transition-all shadow-xl group">
-            <div class="card-body p-6">
-              <div class="flex justify-between items-start mb-4">
-                <div class="text-xs font-bold text-slate-400"><%= job.company_name %></div>
-                <div class="badge badge-error text-xs font-bold"><%= round.session_type.humanize %></div>
-              </div>
-              <h3 class="text-md font-black text-white group-hover:text-error transition-colors leading-tight mb-3">
-                <%= link_to job.title, job_posting_path(job) %>
-              </h3>
-              <div class="text-xs font-bold text-slate-400 mb-1">
-                <%= t('.interviews.round_of', position: process.position, total: process.total) %> &middot; <%= round.notes.presence || round.session_type.humanize %>
-              </div>
-              <div class="text-xs font-bold text-error/90 mb-4">
-                <% if round.scheduled_at %>
-                  <%= round.scheduled_at.strftime("%a %b %-d, %H:%M") %>
-                  <span class="text-slate-500">(<%= distance_of_time_in_words(Time.current, round.scheduled_at) %>)</span>
-                <% else %>
-                  <%= t('.interviews.not_scheduled') %>
-                <% end %>
-              </div>
-              <% if process.next_task %>
-                <div class="text-xs font-bold text-warning mb-4">
-                  <%= t('.interviews.next_task', task: process.next_task.title) %>
-                </div>
-              <% end %>
-              <div class="mt-auto">
-                <%= link_to t('.interviews.open_prep'), job_posting_path(job, anchor: "interview-prep"),
-                      class: "btn btn-error btn-sm rounded-lg font-bold w-full" %>
-              </div>
-            </div>
-          </div>
-        <% end %>
-      </div>
-    </section>
-  <% end %>
-
-  <!-- Active Leads Block: favorited, not applied yet -->
-  <% if @active_leads.any? %>
-    <section>
-      <div class="flex items-center gap-4 mb-6">
-        <h2 class="text-sm font-black uppercase tracking-widest text-primary"><%= t('.active_leads.heading') %></h2>
-        <div class="h-px flex-1 bg-primary/20"></div>
-        <span class="badge badge-primary badge-xs font-black"><%= @active_leads.count %></span>
-      </div>
-
-      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        <% @active_leads.each do |user_job| %>
-          <% job = user_job.job_posting %>
-          <div class="card bg-base-200 border border-primary/10 hover:border-primary/50 transition-all shadow-xl group">
-            <div class="card-body p-6">
-              <div class="text-xs font-bold text-slate-400 mb-4"><%= job.company_name %></div>
-              <h3 class="text-md font-black text-white group-hover:text-primary transition-colors leading-tight mb-4">
-                <%= link_to job.title, job_posting_path(job) %>
-              </h3>
-              <div class="mt-auto flex items-center justify-between">
-                <div class="text-xs font-bold text-slate-500"><%= job.location.presence || t('job_postings.show.remote_fallback') %></div>
-                <%= link_to t('.active_leads.review'), job_posting_path(job), class: "text-xs font-bold text-primary hover:underline" %>
-              </div>
-            </div>
-          </div>
-        <% end %>
-      </div>
-    </section>
-  <% end %>
-
-  <!-- Awaiting Response Block: applied, no outcome yet -->
-  <% if @awaiting_response.any? %>
-    <section>
-      <div class="flex items-center gap-4 mb-6">
-        <h2 class="text-sm font-black uppercase tracking-widest text-secondary"><%= t('.awaiting_response.heading') %></h2>
-        <div class="h-px flex-1 bg-secondary/20"></div>
-        <span class="badge badge-secondary badge-xs font-black"><%= @awaiting_response.count %></span>
-      </div>
-
-      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        <% @awaiting_response.each do |user_job| %>
-          <% job = user_job.job_posting %>
-          <div class="card bg-base-200 border border-secondary/10 hover:border-secondary/50 transition-all shadow-xl group">
-            <div class="card-body p-6">
-              <div class="flex justify-between items-start mb-4">
-                <div class="text-xs font-bold text-slate-400"><%= job.company_name %></div>
-                <% if user_job.applied_at %>
-                  <div class="text-xs font-bold text-slate-500"><%= t('.awaiting_response.applied_ago', duration: time_ago_in_words(user_job.applied_at)) %></div>
-                <% end %>
-              </div>
-              <h3 class="text-md font-black text-white group-hover:text-secondary transition-colors leading-tight mb-4">
-                <%= link_to job.title, job_posting_path(job) %>
-              </h3>
-              <div class="mt-auto flex items-center justify-between">
-                <div class="text-xs font-bold text-slate-500"><%= job.location.presence || t('job_postings.show.remote_fallback') %></div>
-                <%= link_to t('.awaiting_response.review'), job_posting_path(job), class: "text-xs font-bold text-secondary hover:underline" %>
-              </div>
-            </div>
-          </div>
-        <% end %>
-      </div>
-    </section>
-  <% end %>
-
   <!-- Priority In-Box Block -->
   <% if @priority_inbox.any? %>
     <section>
@@ -165,7 +133,7 @@
           <div class="card bg-base-200 border border-accent/10 hover:border-accent/50 transition-all shadow-xl group">
             <div class="card-body p-6">
               <div class="flex justify-between items-start mb-4">
-                <div class="text-xs font-bold text-slate-400"><%= job.company_name %></div>
+                <div class="text-xs font-bold text-slate-400"><%= job.company_name.presence || t('.unknown_company') %></div>
                 <div class="badge badge-accent text-xs font-bold"><%= t('.priority_inbox.high_match') %></div>
               </div>
               <h3 class="text-md font-black text-white group-hover:text-accent transition-colors leading-tight mb-4">
@@ -174,8 +142,8 @@
               <div class="mt-auto flex items-center justify-between">
                 <div class="text-xs font-bold text-slate-500"><%= job.location.presence || t('job_postings.show.remote_fallback') %></div>
                 <div class="flex gap-2">
-                  <%= button_to t('.priority_inbox.favorite'), user_job_postings_path(job_posting_id: job.id, status: 'favorited'), class: "text-xs font-bold text-primary hover:underline" %>
-                  <%= link_to t('.priority_inbox.review'), job_posting_path(job), class: "text-xs font-bold text-slate-400 hover:text-white" %>
+                <%= button_to t('.priority_inbox.favorite'), user_job_postings_path(job_posting_id: job.id, status: 'favorited'), aria: { label: "Favorite #{job.title}" }, class: "text-xs font-bold text-primary hover:underline" %>
+                  <%= link_to t('.priority_inbox.review'), job_posting_path(job), aria: { label: "Review #{job.title}" }, class: "text-xs font-bold text-slate-400 hover:text-white" %>
                 </div>
               </div>
             </div>
@@ -210,7 +178,7 @@
               </h3>
               <div class="mt-auto flex items-center justify-between">
                 <div class="text-xs font-bold text-slate-500"><%= user_job.status.humanize %></div>
-                <%= link_to t('.idle_followups.follow_up'), job_posting_path(job), class: "text-xs font-bold text-warning hover:underline" %>
+                <%= link_to t('.idle_followups.follow_up'), job_posting_path(job), aria: { label: "Follow up on #{job.title}" }, class: "text-xs font-bold text-warning hover:underline" %>
               </div>
             </div>
           </div>
@@ -232,7 +200,7 @@
           <div class="card bg-base-200 border border-primary/10 hover:border-primary/50 transition-all shadow-xl group">
             <div class="card-body p-6">
               <div class="flex justify-between items-start mb-4">
-                <div class="text-xs font-bold text-slate-400"><%= job.company_name %></div>
+                <div class="text-xs font-bold text-slate-400"><%= job.company_name.presence || t('.unknown_company') %></div>
                 <div class="badge badge-primary badge-outline text-xs font-bold"><%= t('.matches.ai_match') %></div>
               </div>
               <h3 class="text-md font-black text-white group-hover:text-primary transition-colors leading-tight mb-4">
@@ -240,7 +208,7 @@
               </h3>
               <div class="mt-auto flex items-center justify-between">
                 <div class="text-xs font-bold text-slate-500"><%= job.location.presence || t('job_postings.show.remote_fallback') %></div>
-                <%= link_to t('.matches.view'), job_posting_path(job), class: "text-xs font-bold text-primary hover:underline" %>
+                <%= link_to t('.matches.view'), job_posting_path(job), aria: { label: "View #{job.title}" }, class: "text-xs font-bold text-primary hover:underline" %>
               </div>
             </div>
           </div>

@@ -9,12 +9,14 @@
         </span>
       <% else %>
         <%= button_to t('job_postings.show.reformat_button'), reformat_job_posting_path(job_posting),
-              method: :post, class: "text-xs font-bold text-primary hover:underline bg-transparent border-0 p-0 cursor-pointer" %>
+              method: :post, class: "text-xs font-bold text-primary hover:underline bg-transparent border-0 p-0 cursor-pointer",
+              data: { turbo_confirm: "Reformat this posting with AI? This can be slow and will replace the displayed formatted description when it finishes." } %>
       <% end %>
     <% end %>
   </div>
 
-  <div class="prose-invert max-w-none text-sm font-medium leading-relaxed text-base-content/80">
+  <div class="prose prose-invert max-w-none text-sm font-medium leading-relaxed text-base-content/80">
+
     <% if job_posting.body.present? %>
       <%= markdown(job_posting.data["formatted_body"].presence || job_posting.body) %>
     <% else %>

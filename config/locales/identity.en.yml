@@ -1,0 +1,7 @@
+en:
+  wwr:
+    identity:
+      default_email: owner@example.com
+      default_password: change-me-local
+      default_profile_url: https://profile.localhost/resume.json
+      default_display_name: Candidate

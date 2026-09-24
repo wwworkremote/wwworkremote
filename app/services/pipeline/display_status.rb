@@ -31,28 +31,18 @@ class Pipeline::DisplayStatus
     "favorited" => { label: "Favorited", semantic: :pipeline_favorited },
     "applied" => { label: "Applied", semantic: :pipeline_applied },
     "interview" => { label: "Interviewing", semantic: :pipeline_interview },
-    "archived" => { label: "Archived", semantic: :pipeline_archived }
+    "archived" => { label: "Archived", semantic: :pipeline_archived },
+    "skipped" => { label: "Seen", semantic: :pipeline_skipped }
   }.freeze
 
-  # Terminal employer decisions are the most actionable fact for the personal
-  # workflow. A listing can be marked ignored/expired after an application,
-  # but that must not hide a rejection (or offer) and make the card look like
-  # an active pipeline stage. Dead-link lifecycle states still win when there
-  # is no terminal employer decision, and JobPosting's archived state wins
-  # over a UserJobPosting archived state for that same reason.
+
+  # JobPosting's own archived wins over UserJobPosting's archived -- a dead
+  # link outranks an old pipeline decision as the more current fact.
   def self.call(job_posting:, user_job:)
-    terminal_outcome(user_job) || LIFECYCLE[job_posting.status] ||
-      OUTCOME[user_job&.outcome] || PIPELINE[user_job&.status]
+    LIFECYCLE[job_posting.status] || OUTCOME[user_job&.outcome] || PIPELINE[user_job&.status]
   end
 
   def self.outcome(user_job)
     OUTCOME[user_job&.outcome]
   end
-
-  def self.terminal_outcome(user_job)
-    return unless %w[offered rejected].include?(user_job&.outcome)
-
-    OUTCOME[user_job.outcome]
-  end
-  private_class_method :terminal_outcome
 end

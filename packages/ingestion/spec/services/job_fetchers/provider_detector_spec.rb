@@ -9,6 +9,10 @@ RSpec.describe JobFetchers::ProviderDetector do
       expect(described_class.call("https://boards.greenhouse.io/acme/jobs/1")).to eq("greenhouse")
     end
 
+    it "recognizes Greenhouse-hosted links embedded in employer domains" do
+      expect(described_class.call("https://careers.toasttab.com/jobs?gh_jid=8186228")).to eq("greenhouse")
+    end
+
     it "maps weworkremotely.com to the wwr selector key" do
       expect(described_class.call("https://weworkremotely.com/remote-jobs/1")).to eq("wwr")
     end

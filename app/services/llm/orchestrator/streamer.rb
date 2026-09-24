@@ -35,7 +35,9 @@ class LLM::Orchestrator::Streamer
   end
 
   def to_provider_message(message)
-    LLM::Orchestrator::ProviderMessage.new(message.role, message.content, nil, nil, nil, nil)
+    LLM::Orchestrator::ProviderMessage.new(
+      message.role.to_sym, message.content, nil, nil, message.thinking_text, message.thinking_signature
+    )
   end
 
   def stream_args

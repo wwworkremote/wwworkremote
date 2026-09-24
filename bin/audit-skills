@@ -1,0 +1,42 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Repeatable, read-only audit of the skills this repository asks agents to use.
+# Global Codex plugin state is included when ~/.codex/config.toml is readable.
+
+repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+agent_file="$repo_root/AGENTS.md"
+codex_config="${CODEX_CONFIG_PATH:-$HOME/.codex/config.toml}"
+
+echo "Skill audit: $(date '+%Y-%m-%d')"
+echo
+echo "Repository baseline (priority order):"
+awk '/^## 🛠️ Engineering Skills/{inside=1; next} /^## ⚙️ Repository Configuration/{inside=0} inside && /^- \*\*/ {print}' "$agent_file"
+
+echo
+echo "Repository skill assets:"
+skill_count=0
+while IFS= read -r skill; do
+  skill_count=$((skill_count + 1))
+  name="$(sed -n 's/^name:[[:space:]]*//p' "$skill" | head -1 | tr -d '"')"
+  description="$(awk -F: '/^description:/{sub(/^[[:space:]]*/, "", $2); print $2; exit}' "$skill")"
+  printf '%-32s description_chars=%-4s %s\n' "$name" "${#description}" "$skill"
+done < <(find "$repo_root/.claude/skills" "$repo_root/.agents/skills" -name SKILL.md -type f 2>/dev/null | sort)
+echo "count=$skill_count"
+
+if [[ -r "$codex_config" ]]; then
+  echo
+  echo "Enabled Codex plugins:"
+  awk '
+    /^\[plugins\./ {section=$0; enabled=""}
+    /^enabled = / {enabled=$0; if ($0 == "enabled = true") print section}
+  ' "$codex_config"
+else
+  echo
+  echo "Global Codex config: unavailable ($codex_config)"
+fi
+
+echo
+echo "Checks:"
+if [[ "$skill_count" -gt 0 ]]; then echo "PASS skill assets discoverable"; else echo "WARN no repo skill assets"; fi
+if grep -q '^## 🛠️ Engineering Skills' "$agent_file"; then echo "PASS prioritized baseline present"; else echo "FAIL baseline section missing"; fi

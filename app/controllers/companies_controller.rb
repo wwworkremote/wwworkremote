@@ -1,18 +1,24 @@
 # frozen_string_literal: true
 
 class CompaniesController < ApplicationController
-  # The index composes the query from independent URL filters.
-  # rubocop:disable-next Metrics/AbcSize, Metrics/MethodLength
+  # This index deliberately keeps query, filter, and sort semantics together
+  # so every control preserves the same result set.
+  # rubocop:disable-next-line Metrics/AbcSize, Metrics/CyclomaticComplexity, Metrics/MethodLength
   def index
+    @query = params[:q].to_s.strip.presence
+    @sort = %w[name postings].include?(params[:sort]) ? params[:sort] : "postings"
+    @filter = %w[all active paused cooldown].include?(params[:filter]) ? params[:filter] : "all"
     scope = Company.select("companies.*, count(job_postings.id) as job_postings_count")
                    .left_joins(:job_postings)
                    .group("companies.id")
-    @query = params[:q].to_s.strip
-    scope = scope.where("companies.name ILIKE ?", "%#{Company.sanitize_sql_like(@query)}%") if @query.present?
-    scope = scope.where(ingestion_enabled: true) if params[:active] == "1"
-    scope = scope.where(toxic_culture_flag: true) if params[:flagged] == "1"
-    scope = scope.where("last_declined_at > ?", Company::COOLDOWN.ago) if params[:cooldown] == "1"
-    @companies = scope.order(job_postings_count: :desc, name: :asc)
+    if @query
+      pattern = "%#{ActiveRecord::Base.sanitize_sql_like(@query)}%"
+      scope = scope.where("companies.name ILIKE :pattern", pattern: pattern)
+    end
+    scope = scope.where(ingestion_enabled: true) if @filter == "active"
+    scope = scope.where(ingestion_enabled: false) if @filter == "paused"
+    scope = scope.where("companies.last_declined_at > ?", 6.months.ago) if @filter == "cooldown"
+    @companies = scope.order(@sort == "name" ? { name: :asc } : { job_postings_count: :desc, name: :asc })
                       .page(params[:page]).per(24)
   end
 

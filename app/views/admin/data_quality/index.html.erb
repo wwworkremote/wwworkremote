@@ -1,0 +1,48 @@
+<% content_for :title, "Data quality | WWWorkRemote" %>
+<%= render "admin/shared/nav" %>
+<div class="mb-8">
+  <div class="text-xs font-black uppercase tracking-widest text-primary mb-2">Reconciliation queue</div>
+  <h1 class="text-3xl font-black text-white">Data quality</h1>
+  <p class="text-sm text-slate-400 mt-2">Missing fields ranked by the value they unlock. Fix the top row first.</p>
+  <%= link_to "Export audit JSON", admin_data_quality_path(format: :json), class: "inline-block mt-3 text-xs font-bold text-primary hover:text-white" %>
+  <%= link_to "Export company candidates", admin_data_quality_path(field: "Company", format: :json), class: "inline-block mt-3 ml-4 text-xs font-bold text-primary hover:text-white" %>
+  <%= button_to "Apply exact matches", admin_reconcile_companies_path, method: :post, class: "btn btn-primary btn-sm rounded-lg font-bold mt-4", form: { class: "inline-block ml-4" }, data: { turbo_confirm: "Link only unambiguous exact company matches?" } %>
+</div>
+<div class="grid gap-6 lg:grid-cols-[20rem_1fr]">
+  <section class="space-y-2" aria-label="Missing data fields">
+    <% @findings.each do |finding| %>
+      <%= link_to admin_data_quality_path(field: finding[:field]), class: "block rounded-xl border p-4 #{finding[:field] == @selected_field ? 'border-primary bg-primary/10' : 'border-white/10 bg-base-200'}" do %>
+        <div class="flex justify-between gap-4"><span class="font-bold text-white"><%= finding[:field] %></span><span class="font-black text-warning tabular-nums"><%= finding[:missing] %></span></div>
+        <div class="text-xs text-slate-500 mt-1">Priority <%= finding[:priority] %> / 5 · unlocks <%= finding[:unlocks] %></div>
+      <% end %>
+    <% end %>
+  </section>
+  <section class="rounded-2xl border border-white/10 bg-base-200 overflow-hidden">
+    <% selected_finding = @findings.find { |finding| finding[:field] == @selected_field } %>
+    <div class="p-5 border-b border-white/10">
+      <div class="flex flex-wrap items-center justify-between gap-3">
+        <h2 class="font-black text-white">Missing <%= @selected_field || 'fields' %></h2>
+        <% if selected_finding && @selected_field != "Company" && @selected_field != "Company candidate" %>
+          <%= link_to "Open repair surface", (@selected_field == "Description" ? data_fetchers_path : admin_job_postings_path), class: "btn btn-primary btn-xs rounded-lg font-bold" %>
+        <% end %>
+      </div>
+      <p class="text-xs text-slate-500 mt-1"><%= selected_finding&.fetch(:action, 'Review the records below') %>. Showing up to 50 records.</p>
+    </div>
+    <div class="divide-y divide-white/5">
+      <% @examples.each do |job| %>
+        <%= link_to job_posting_path(job), class: "flex items-center justify-between gap-4 p-4 hover:bg-white/5" do %>
+          <div><div class="font-bold text-white"><%= job.title.presence || "Untitled posting" %></div><div class="text-xs text-slate-500"><%= job.company&.name || job.company_name || "Unknown company" %></div></div>
+          <% if @selected_field == "Company" %>
+            <%= form_with url: admin_data_quality_record_path(job), method: :patch, scope: :job_posting, class: "flex items-center gap-2", data: { turbo: false } do |form| %>
+              <%= form.collection_select :company_id, Company.order(:name), :id, :name, { prompt: "Assign company" }, class: "select select-bordered select-xs bg-base-300 text-white max-w-44", aria: { label: "Assign company for #{job.title}" } %>
+              <%= form.submit "Save", class: "btn btn-primary btn-xs rounded-lg font-bold" %>
+            <% end %>
+          <% else %>
+            <span class="text-xs font-bold text-primary">Review</span>
+          <% end %>
+        <% end %>
+      <% end %>
+      <% if @examples.empty? %><div class="p-10 text-center text-sm text-slate-500">No missing records.</div><% end %>
+    </div>
+  </section>
+</div>

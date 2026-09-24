@@ -7,7 +7,7 @@
 
 ## System identity
 
-This is `wwworkremote/core` — the private job-market-intelligence and application-automation
+This is `wwworkremote/wwworkremote` — the private job-market-intelligence and application-automation
 engine half of Mike's two-repo job-search system. Its peer is `just3ws.github.io` (public
 resume/portfolio profile, canonical candidate data). Neither is standalone: they coordinate.
 

@@ -1,30 +1,38 @@
 # frozen_string_literal: true
 
-# == Schema Information
-#
-# Table name: companies
-#
-#  id                 :bigint           not null, primary key
-#  disposition        :string
-#  glassdoor_data     :jsonb
-#  ingestion_enabled  :boolean          default(TRUE), not null
-#  last_declined_at   :datetime
-#  name               :string
-#  sentiment_score    :float
-#  slug               :string
-#  status             :string
-#  toxic_culture_flag :boolean
-#  created_at         :datetime         not null
-#  updated_at         :datetime         not null
-#
-# Indexes
-#
-#  index_companies_on_name       (name) UNIQUE
-#  index_companies_on_name_trgm  (name) USING gin
-#  index_companies_on_slug       (slug) UNIQUE
-#
 require "rails_helper"
 
+
+# ## Schema Information
+#
+# Table name: `companies`
+#
+# ### Columns
+#
+# Name                      | Type               | Attributes
+# ------------------------- | ------------------ | ---------------------------
+# **`id`**                  | `bigint`           | `not null, primary key`
+# **`disposition`**         | `string`           |
+# **`glassdoor_data`**      | `jsonb`            |
+# **`ingestion_enabled`**   | `boolean`          | `default(TRUE), not null`
+# **`last_declined_at`**    | `datetime`         |
+# **`name`**                | `string`           |
+# **`sentiment_score`**     | `float`            |
+# **`slug`**                | `string`           |
+# **`status`**              | `string`           |
+# **`toxic_culture_flag`**  | `boolean`          |
+# **`created_at`**          | `datetime`         | `not null`
+# **`updated_at`**          | `datetime`         | `not null`
+#
+# ### Indexes
+#
+# * `index_companies_on_name` (_unique_):
+#     * **`name`**
+# * `index_companies_on_name_trgm` (_using_ gin):
+#     * **`name`**
+# * `index_companies_on_slug` (_unique_):
+#     * **`slug`**
+#
 RSpec.describe Company do
   describe "associations" do
     it { is_expected.to have_many(:job_postings) }

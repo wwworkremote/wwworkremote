@@ -42,8 +42,22 @@
         <pre class="bg-black/20 p-4 rounded border border-white/5 mb-4 font-mono text-xs text-slate-300 whitespace-pre-wrap"><%= JSON.pretty_generate(task.payload) %></pre>
       <% end %>
 
-      <div class="flex gap-3">
-        <%= button_to "Approve", approve_admin_human_task_path(task), method: :post, class: "btn-neural bg-emerald-500/10 text-emerald-400 border-emerald-500/20 text-sm" %>
+      <% if task.kind == "submit_approval" %>
+        <p class="mb-4 rounded border border-amber-500/30 bg-amber-500/10 p-3 text-xs font-bold text-amber-200">Human gate: approve only after verifying the external submission receipt. This action changes the pipeline to Applied; it does not submit the employer form.</p>
+        <% if (session = @guided_sessions[task.payload["guided_session_token"]]) %>
+          <%= link_to "Review / resume guided application", guided_session_path(session), class: "mb-3 inline-block text-xs font-bold text-primary underline" %>
+        <% end %>
+        <%= form_with url: approve_admin_human_task_path(task), method: :post, id: "approve-human-task-#{task.id}", class: "space-y-3" do %>
+          <label class="flex items-start gap-2 text-xs font-bold text-slate-300"><%= check_box_tag :agreement_confirmed, "1", false, required: true, class: "checkbox checkbox-xs checkbox-warning" %><span>I reviewed and acknowledged the employer’s agreements/attestations.</span></label>
+          <%= text_field_tag :receipt_url, nil, required: true, placeholder: "https://employer.example/confirmation", class: "input input-sm input-bordered w-full" %>
+          <%= submit_tag "Approve and mark Applied", class: "btn-neural bg-emerald-500/10 text-emerald-400 border-emerald-500/20 text-sm" %>
+        <% end %>
+      <% end %>
+
+      <div class="flex gap-3 mt-3">
+        <% unless task.kind == "submit_approval" %>
+          <%= button_to "Approve", approve_admin_human_task_path(task), method: :post, class: "btn-neural bg-emerald-500/10 text-emerald-400 border-emerald-500/20 text-sm" %>
+        <% end %>
         <%= button_to "Reject", reject_admin_human_task_path(task), method: :post, class: "btn-neural bg-rose-500/10 text-rose-400 border-rose-500/20 text-sm" %>
       </div>
     </div>

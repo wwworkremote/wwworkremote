@@ -39,9 +39,11 @@
     <dialog data-command-palette-target="dialog" data-action="click->command-palette#backdropClick"
         class="backdrop:bg-black/60 bg-transparent p-0 m-auto w-full max-w-xl" aria-label="Command palette">
       <div class="bg-base-200 border border-white/10 rounded-2xl shadow-2xl overflow-hidden">
+        <div class="px-6 pt-4 text-xs font-black uppercase tracking-widest text-primary">Jump anywhere</div>
         <input type="text" data-command-palette-target="input" autocomplete="off"
             data-action="input->command-palette#filter keydown->command-palette#onKeydown"
-            placeholder="Jump to a page..."
+            placeholder="Search pages, jobs, companies…"
+            aria-label="Search pages and destinations"
             class="w-full bg-transparent px-6 py-5 text-lg font-bold text-white placeholder:text-slate-500 border-b border-white/10 focus:outline-none focus:border-primary">
         <ul data-command-palette-target="results" class="max-h-96 overflow-y-auto p-2"></ul>
       </div>
@@ -54,9 +56,14 @@
         </a>
       </div>
 
+      <%= form_with url: job_postings_path, method: :get, class: "flex items-center mr-1 sm:mr-2", role: "search" do |f| %>
+        <%= f.search_field :q, id: "global-job-search", placeholder: "Search jobs or companies…", aria: { label: "Search jobs or companies" }, class: "input input-sm w-36 sm:w-52 bg-base-300 border-white/10 text-xs font-bold placeholder:text-slate-500 focus:border-primary" %>
+        <%= f.submit "Search", class: "sr-only" %>
+      <% end %>
+
       <button type="button" data-action="click->command-palette#open"
-          class="btn btn-ghost btn-xs rounded text-slate-400 font-mono mr-1 sm:mr-2" aria-label="Open command palette">
-        &#8984;K
+          class="btn btn-ghost btn-xs rounded text-slate-400 font-mono mr-1 sm:mr-2" aria-label="Open command palette" aria-keyshortcuts="Control+K Meta+K">
+        <span class="hidden sm:inline">&#8984;K</span><span class="sm:hidden">⌕</span>
       </button>
 
       <nav aria-label="Primary" class="hidden md:block flex-none">
@@ -64,37 +71,12 @@
           <% nav_links = {
                dashboard: [t('.nav.dashboard'), root_path],
                companies: [t('.nav.companies'), companies_path],
-               job_postings: [t('.nav.job_postings'), job_postings_path],
+               job_postings: ["Find Jobs", job_postings_path],
                triage: [t('.nav.triage'), job_posting_triage_path],
-               saved_jobs: [t('.nav.saved_jobs'), user_job_postings_path],
+               saved_jobs: ["My Pipeline", user_job_postings_path],
+               job_board: ["Job Board", user_job_postings_path(view: "board")],
                guided_sessions: [t('.nav.guided_sessions'), guided_sessions_path],
                docs: [t('.nav.docs'), docs_path]
-             } %>
-          <% nav_tree = {
-               "Career & discovery" => [
-                 ["Companies", companies_path], ["Job postings", job_postings_path],
-                 ["Sources", sources_path], ["Saved jobs", user_job_postings_path],
-                 ["Saved searches", job_searches_path], ["Guided sessions", guided_sessions_path],
-                 ["Data fetchers", data_fetchers_path], ["Documentation", docs_path]
-               ],
-               "Profile & AI" => [
-                 ["Career profile", career_profile_path], ["Résumé versions", resumes_path],
-                 ["Question graph", question_archetypes_path], ["AI chats", llm_chats_path],
-                 ["AI models", models_path]
-               ],
-               "Operations" => [
-                 ["Admin dashboard", admin_root_path], ["Admin skills", admin_skills_path],
-                 ["Pipeline prompts", admin_pipeline_prompts_path],
-                 ["Background jobs", admin_jobs_path], ["System health", admin_observability_path],
-                 ["Admin companies", admin_companies_path], ["Admin postings", admin_job_postings_path],
-                 ["Admin sources", admin_sources_path], ["Admin leads", admin_leads_path],
-                 ["Admin tasks", admin_tasks_path], ["Admin human tasks", admin_human_tasks_path],
-                 ["Admin documents", admin_documents_path], ["Admin domains", admin_domains_path],
-                 ["Admin queries", admin_queries_path], ["Admin email imports", admin_email_import_records_path],
-                 ["Admin models", admin_models_path], ["Admin visits", admin_visits_path],
-                 ["Admin events", admin_events_path],
-                 ["Extraction rules", admin_extraction_rules_path], ["Pipeline filters", admin_pipeline_filters_path]
-               ]
              } %>
           <% nav_links.each_value do |label, path| %>
             <% active = current_page?(path) %>
@@ -106,25 +88,14 @@
           <% end %>
 
           <li class="dropdown dropdown-end">
-            <div tabindex="0" role="button" aria-haspopup="true" class="btn btn-ghost btn-xs rounded text-primary">Explore</div>
-            <ul tabindex="0" class="dropdown-content z-[1] menu p-3 shadow bg-base-300 rounded-box w-72 mt-4 border border-white/5">
-              <% nav_tree.each do |section, links| %>
-                <li class="menu-title text-xs opacity-60"><%= section %></li>
-                <% links.each do |label, path| %>
-                  <li><%= link_to label, path, class: current_page?(path) ? "text-primary" : nil %></li>
-                <% end %>
-                <div class="divider my-1 opacity-10"></div>
-              <% end %>
-            </ul>
-          </li>
-
-          <li class="dropdown dropdown-end">
             <div tabindex="0" role="button" aria-haspopup="menu" class="btn btn-ghost btn-xs rounded text-primary"><%= t('.nav.profile_menu') %></div>
             <ul tabindex="0" class="dropdown-content z-[1] menu p-2 shadow bg-base-300 rounded-box w-52 mt-4 border border-white/5">
               <li><%= link_to t('.nav.career_profile'), career_profile_path %></li>
               <li><%= link_to t('.nav.resume_versions'), resumes_path %></li>
               <li><%= link_to t('.nav.saved_searches'), job_searches_path %></li>
               <li><%= link_to t('.nav.question_graph'), question_archetypes_path %></li>
+              <li><%= link_to "Answer training", question_archetypes_path %></li>
+              <li><%= link_to "Answer library", application_answer_templates_path %></li>
               <li><%= link_to t('.nav.ai_chats'), llm_chats_path %></li>
               <li><%= link_to t('.nav.ai_models'), models_path %></li>
             </ul>
@@ -137,6 +108,7 @@
               <li><%= link_to t('.nav.admin_dashboard'), admin_root_path %></li>
               <li><%= link_to t('.nav.system_health'), admin_observability_path %></li>
               <li><%= link_to t('.nav.background_jobs'), admin_jobs_path %></li>
+              <li><%= link_to "Human action required", admin_human_tasks_path %></li>
               <li><%= link_to t('.nav.data_sources'), data_fetchers_path %></li>
               <li><%= link_to t('.nav.extraction_rules'), admin_extraction_rules_path %></li>
               <div class="divider my-1 opacity-10"></div>
@@ -156,13 +128,6 @@
         <ul class="dropdown-content z-[60] menu p-3 mt-3 w-64 gap-1 rounded-2xl border border-white/10 bg-base-300 shadow-2xl font-bold">
           <% nav_links.each_value do |label, path| %>
             <li><%= link_to label, path, class: current_page?(path) ? "text-primary" : nil %></li>
-          <% end %>
-          <li class="menu-title mt-2 text-xs opacity-60">Explore</li>
-          <% nav_tree.each do |section, links| %>
-            <li class="menu-title text-xs opacity-50"><%= section %></li>
-            <% links.each do |label, path| %>
-              <li><%= link_to label, path, class: current_page?(path) ? "text-primary" : nil %></li>
-            <% end %>
           <% end %>
           <li class="menu-title mt-2 text-xs opacity-60"><%= t('.nav.admin_section_label') %></li>
           <li><%= link_to t('.nav.admin_dashboard'), admin_root_path %></li>
@@ -193,11 +158,7 @@
           <h6 class="footer-title text-white opacity-60 text-xs font-bold"><%= t('.footer.links_heading') %></h6>
           <%= link_to t('.footer.about'), about_path, class: "link link-hover text-xs font-bold text-slate-400" %>
           <%= link_to t('.footer.source_code'), 'https://github.com/wwworkremote/wwworkremote', class: "link link-hover text-xs font-bold text-slate-400", target: "_blank" %>
-          <%= link_to 'Mike Hall profile', 'https://www.just3ws.com/', class: "link link-hover text-xs font-bold text-slate-400", target: "_blank", rel: "noopener" %>
-          <%= link_to 'Résumé', 'https://www.just3ws.com/resume/', class: "link link-hover text-xs font-bold text-slate-400", target: "_blank", rel: "noopener" %>
-          <%= link_to 'GitHub profile', 'https://github.com/just3ws', class: "link link-hover text-xs font-bold text-slate-400", target: "_blank", rel: "noopener" %>
-          <%= link_to 'LinkedIn', 'https://www.linkedin.com/in/just3ws/', class: "link link-hover text-xs font-bold text-slate-400", target: "_blank", rel: "noopener" %>
-          <%= link_to 'Sponsor WWWorkRemote', 'https://github.com/sponsors/just3ws', class: "link link-hover text-xs font-bold text-primary", target: "_blank", rel: "noopener" %>
+          <%= link_to 'just3ws.com', 'https://www.just3ws.com', class: "link link-hover text-xs font-bold text-slate-400", target: "_blank" %>
         </nav>
         <nav aria-label="<%= t('.footer.also_built_heading') %>">
           <h6 class="footer-title text-white opacity-60 text-xs font-bold"><%= t('.footer.also_built_heading') %></h6>

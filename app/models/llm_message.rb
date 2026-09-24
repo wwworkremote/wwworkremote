@@ -1,38 +1,49 @@
 # frozen_string_literal: true
 
-# == Schema Information
+# ## Schema Information
 #
-# Table name: llm_messages
+# Table name: `llm_messages`
 #
-#  id                    :bigint           not null, primary key
-#  cache_creation_tokens :integer
-#  cached_tokens         :integer
-#  content               :text
-#  content_raw           :json
-#  input_tokens          :integer
-#  output_tokens         :integer
-#  role                  :string           not null
-#  thinking_signature    :text
-#  thinking_text         :text
-#  thinking_tokens       :integer
-#  created_at            :datetime         not null
-#  updated_at            :datetime         not null
-#  llm_chat_id           :bigint
-#  model_id              :bigint
-#  tool_call_id          :bigint
+# ### Columns
 #
-# Indexes
+# Name                         | Type               | Attributes
+# ---------------------------- | ------------------ | ---------------------------
+# **`id`**                     | `bigint`           | `not null, primary key`
+# **`cache_creation_tokens`**  | `integer`          |
+# **`cached_tokens`**          | `integer`          |
+# **`content`**                | `text`             |
+# **`content_raw`**            | `json`             |
+# **`input_tokens`**           | `integer`          |
+# **`output_tokens`**          | `integer`          |
+# **`role`**                   | `string`           | `not null`
+# **`thinking_signature`**     | `text`             |
+# **`thinking_text`**          | `text`             |
+# **`thinking_tokens`**        | `integer`          |
+# **`created_at`**             | `datetime`         | `not null`
+# **`updated_at`**             | `datetime`         | `not null`
+# **`llm_chat_id`**            | `bigint`           |
+# **`model_id`**               | `bigint`           |
+# **`tool_call_id`**           | `bigint`           |
 #
-#  index_llm_messages_on_llm_chat_id   (llm_chat_id)
-#  index_llm_messages_on_model_id      (model_id)
-#  index_llm_messages_on_role          (role)
-#  index_llm_messages_on_tool_call_id  (tool_call_id)
+# ### Indexes
 #
-# Foreign Keys
+# * `index_llm_messages_on_llm_chat_id`:
+#     * **`llm_chat_id`**
+# * `index_llm_messages_on_model_id`:
+#     * **`model_id`**
+# * `index_llm_messages_on_role`:
+#     * **`role`**
+# * `index_llm_messages_on_tool_call_id`:
+#     * **`tool_call_id`**
 #
-#  fk_rails_...  (llm_chat_id => llm_chats.id)
-#  fk_rails_...  (model_id => models.id)
-#  fk_rails_...  (tool_call_id => tool_calls.id)
+# ### Foreign Keys
+#
+# * `fk_rails_...`:
+#     * **`llm_chat_id => llm_chats.id`**
+# * `fk_rails_...`:
+#     * **`model_id => models.id`**
+# * `fk_rails_...`:
+#     * **`tool_call_id => tool_calls.id`**
 #
 class LLMMessage < ApplicationRecord
   include ::RubyLLM::ActiveRecord::ActsAs

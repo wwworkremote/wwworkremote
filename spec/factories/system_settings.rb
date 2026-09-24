@@ -1,18 +1,23 @@
 # frozen_string_literal: true
 
-# == Schema Information
+# ## Schema Information
 #
-# Table name: system_settings
+# Table name: `system_settings`
 #
-#  id         :bigint           not null, primary key
-#  key        :string
-#  value      :string
-#  created_at :datetime         not null
-#  updated_at :datetime         not null
+# ### Columns
 #
-# Indexes
+# Name              | Type               | Attributes
+# ----------------- | ------------------ | ---------------------------
+# **`id`**          | `bigint`           | `not null, primary key`
+# **`key`**         | `string`           |
+# **`value`**       | `string`           |
+# **`created_at`**  | `datetime`         | `not null`
+# **`updated_at`**  | `datetime`         | `not null`
 #
-#  index_system_settings_on_key  (key) UNIQUE
+# ### Indexes
+#
+# * `index_system_settings_on_key` (_unique_):
+#     * **`key`**
 #
 FactoryBot.define do
   factory :system_setting do

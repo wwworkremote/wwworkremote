@@ -9,6 +9,8 @@
         <span class="text-[9px] font-black uppercase tracking-[0.3em] text-slate-600">Core</span>
         <%= link_to "Dashboard", admin_root_path, class: "text-xs font-bold uppercase tracking-widest #{nav_link_class.call('dashboard')}", "aria-current": nav_link_current.call('dashboard') %>
         <%= link_to "Observability", admin_observability_path, class: "text-xs font-bold uppercase tracking-widest #{nav_link_class.call('observability')}", "aria-current": nav_link_current.call('observability') %>
+        <%= link_to "Data Quality", admin_data_quality_path, class: "text-xs font-bold uppercase tracking-widest #{nav_link_class.call('data_quality')}", "aria-current": nav_link_current.call('data_quality') %>
+        <%= link_to "Resume Refresh", admin_resume_refreshes_path, class: "text-xs font-bold uppercase tracking-widest #{nav_link_class.call('resume_refreshes')}", "aria-current": nav_link_current.call('resume_refreshes') %>
       </div>
 
       <div class="w-px h-3 bg-white/10 hidden md:block"></div>

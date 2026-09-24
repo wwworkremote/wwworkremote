@@ -38,7 +38,12 @@ class Admin::JobPostingsController < Admin::ApplicationController
 
   def update
     @job_posting = JobPosting.find(params.expect(:id))
-    perform_action(params[:action_type])
+    if params[:action_type].present?
+      perform_action(params[:action_type])
+    else
+      @job_posting.update!(job_posting_params)
+      flash[:notice] = "Job posting metadata updated."
+    end
     redirect_back_or_to(job_posting_path(@job_posting))
   end
 
@@ -83,6 +88,10 @@ class Admin::JobPostingsController < Admin::ApplicationController
 
     handler.call(@job_posting)
     flash[:notice] = ACTION_NOTICES[action_type]
+  end
+
+  def job_posting_params
+    params.expect(job_posting: %i[published_at company_id])
   end
 
   def bulk_action_notice

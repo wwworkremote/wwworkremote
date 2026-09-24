@@ -1,4 +1,4 @@
-<div class="w-full max-w-none mx-0 py-10 px-0">
+<div class="<%= @view == 'board' ? 'w-full max-w-none' : 'max-w-[1500px]' %> mx-auto py-10 px-6">
   <div class="mb-10 text-xs font-bold opacity-60">
     <div class="flex items-center gap-3">
       <%= link_to "Home", root_path, class: "hover:text-primary transition-all" %>
@@ -7,19 +7,44 @@
     </div>
   </div>
 
+  <%= form_with url: bulk_action_user_job_postings_path, method: :post, id: "pipeline-bulk-form", class: "flex flex-wrap items-center gap-2 mb-8 p-4 rounded-xl border border-white/10 bg-base-200" do |form| %>
+    <span class="text-xs font-black uppercase tracking-widest text-slate-500">Selected actions</span>
+    <%= select_tag :bulk_operation, options_for_select([["Mark applied", "apply"], ["Move to interview", "interview"], ["Archive", "archive"]]), class: "select select-bordered select-xs bg-base-300 text-white" %>
+    <%= form.submit "Apply to selected", class: "btn btn-primary btn-xs rounded-lg font-bold", data: { turbo_confirm: "Apply this action to selected pipeline records?" } %>
+  <% end %>
+
   <header class="mb-12 flex flex-wrap items-end justify-between gap-4">
     <div>
       <h1 class="text-4xl font-black text-white mb-3 tracking-tight leading-none">My Jobs</h1>
       <p class="text-slate-500 font-bold text-sm">Jobs you've favorited or applied to.</p>
     </div>
     <div class="flex items-center gap-1 text-xs font-bold">
+      <span class="mr-2 text-slate-500">View</span>
+      <% { "board" => "Board", "list" => "List" }.each do |key, label| %>
+        <%= link_to label, user_job_postings_path(q: @query, status: @status_filter == "all" ? nil : @status_filter, sort: @sort, view: key), class: "px-3 py-1.5 rounded-lg #{@view == key ? 'bg-primary/20 text-primary border border-primary/20' : 'text-slate-500 hover:text-white border border-transparent'}" %>
+      <% end %>
+      <span class="mx-2 h-4 border-l border-white/10"></span>
       <span class="text-slate-500 mr-2">Sort</span>
       <% { "newest" => "Newest", "oldest" => "Oldest" }.each do |key, label| %>
-        <%= link_to label, user_job_postings_path(sort: key),
+        <%= link_to label, user_job_postings_path(q: @query, status: @status_filter == "all" ? nil : @status_filter, sort: key),
               class: "px-3 py-1.5 rounded-lg transition-all #{@sort == key ? 'bg-primary/20 text-primary border border-primary/20' : 'text-slate-500 hover:text-white border border-transparent'}" %>
       <% end %>
     </div>
   </header>
+
+  <div class="flex flex-col md:flex-row gap-3 mb-8">
+    <%= form_with url: user_job_postings_path, method: :get, class: "flex-1 flex gap-2" do |f| %>
+      <%= f.search_field :q, value: @query, placeholder: "Search jobs or companies…", class: "input input-bordered bg-base-200 border-white/10 w-full font-bold" %>
+      <%= f.hidden_field :status, value: @status_filter unless @status_filter == "all" %>
+      <%= f.hidden_field :sort, value: @sort %>
+      <%= f.submit "Search", class: "btn btn-primary font-bold" %>
+    <% end %>
+    <div class="flex items-center gap-1 text-xs font-bold">
+      <% { "all" => "All", "favorited" => "Favorited", "applied" => "Applied", "interview" => "Interview", "idle" => "Idle", "due" => "Due follow-up", "outcomes" => "Outcomes" }.each do |key, label| %>
+        <%= link_to label, user_job_postings_path(q: @query, status: key == "all" ? nil : key, sort: @sort), class: "px-3 py-2 rounded-lg #{@status_filter == key ? 'bg-primary/20 text-primary' : 'text-slate-500 hover:text-white'}" %>
+      <% end %>
+    </div>
+  </div>
 
   <section class="grid grid-cols-2 md:grid-cols-5 gap-3 mb-10" aria-label="Application funnel overview">
     <% [["Tracked", @funnel_stats[:tracked], "text-primary"],
@@ -34,40 +59,51 @@
     <% end %>
   </section>
 
-  <div class="grid grid-cols-1 gap-12">
+  <% if @view == "board" %>
+    <%= render "board", lanes: @lanes, tracked: @tracked %>
+  <% else %>
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
     <div class="space-y-6">
-      <h3 class="text-xs font-bold text-primary border-b border-primary/10 pb-4">Favorites</h3>
+      <h3 class="flex items-center justify-between text-xs font-bold text-primary border-b border-primary/10 pb-4"><span>Favorites</span><span class="badge badge-sm border-primary/20 text-primary"><%= @favorites.size %></span></h3>
       <% if @favorites.any? %>
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div class="space-y-4">
           <% @favorites.each do |user_job| %>
             <% job = user_job.job_posting %>
-            <div class="card-neural p-6 hover:border-primary/50 transition-all group border border-white/5 h-full">
-              <div class="flex flex-col gap-5 h-full">
-                <div class="min-w-0">
+            <div class="card-neural border border-white/10 p-6 hover:border-primary/50 transition-all group">
+              <div class="flex justify-between items-start">
+                <div>
                   <div class="text-xs font-bold text-slate-500 mb-1"><%= job.company_name %></div>
-                  <h4 class="text-lg font-black text-white group-hover:text-primary transition-colors truncate"><%= link_to job.title, job_posting_path(job) %></h4>
-                  <div class="flex flex-wrap gap-x-4 gap-y-1 mt-3 text-xs font-bold">
-                    <span class="text-slate-500"><%= job.location.presence || "Location unknown" %></span>
-                    <% if job.data['is_remote'] %><span class="text-emerald-500">Remote eligible</span><% end %>
+                  <h4 class="text-lg font-black text-white group-hover:text-primary transition-colors"><%= link_to job.title, job_posting_path(job) %></h4>
+
+                  <div class="flex flex-wrap gap-x-4 gap-y-1 mt-2">
+                    <span class="text-xs font-bold text-slate-600 flex items-center gap-1">
+                      <%= heroicon "bookmark", variant: :outline, options: { class: "w-4 h-4" } %> saved <%= user_job.created_at.strftime("%b %-d, %Y") %>
+                    </span>
+                    <% if job.data['is_remote'] %>
+                      <span class="text-xs font-bold text-emerald-500 flex items-center gap-1">
+                        <%= heroicon "signal", variant: :outline, options: { class: "w-4 h-4" } %> Remote
+                      </span>
+                    <% end %>
+
                     <% if job.data['salary_min'] || job.data['salary_max'] %>
-                      <span class="text-amber-500"><%= number_to_currency(job.data['salary_min'], precision: 0) %>–<%= number_to_currency(job.data['salary_max'], precision: 0) %></span>
+                      <span class="text-xs font-bold text-amber-500 flex items-center gap-1">
+                        <%= heroicon "banknotes", variant: :outline, options: { class: "w-4 h-4" } %> <%= number_to_currency(job.data['salary_min'], precision: 0) %> - <%= number_to_currency(job.data['salary_max'], precision: 0) %>
+                      </span>
                     <% end %>
                   </div>
                 </div>
-                <div class="flex flex-wrap gap-2 text-xs font-bold border-t border-white/5 pt-4">
-                  <span class="text-slate-500">Saved <%= user_job.created_at.strftime("%b %-d, %Y") %> · <%= time_ago_in_words(user_job.created_at) %> ago</span>
-                  <% if user_job.match_score.present? %><span class="text-primary"><%= user_job.match_score %>% match</span><% else %><span class="text-slate-600">Match not scored</span><% end %>
-                  <span class="text-slate-600"><%= job.enriched_at.present? ? "Enriched" : "Needs enrichment" %></span>
+                <div class="flex items-center gap-3">
+                  <label class="flex items-center gap-1.5 text-[10px] font-bold text-slate-500"><%= check_box_tag "user_job_posting_ids[]", user_job.id, false, form: "pipeline-bulk-form", class: "checkbox checkbox-xs checkbox-primary", aria: { label: "Select #{job.title}" } %> Select</label>
+                  <%= button_to "×", user_job_posting_path(user_job), method: :delete, class: "text-rose-500 text-sm font-bold opacity-0 group-hover:opacity-100 transition-opacity", title: "Remove" %>
                 </div>
-                <div class="flex flex-wrap gap-2 text-xs font-bold border-t border-white/5 pt-4">
-                  <span class="text-primary">Favorited · not applied</span>
-                  <% if user_job.interview_prep_pack.present? %><span class="text-success">Prep pack ready</span><% end %>
-                  <% if job.published_at %><span class="text-slate-500">Posted <%= time_ago_in_words(job.published_at) %> ago</span><% end %>
-                </div>
-                <div class="flex items-center gap-3 mt-auto pt-2">
-                  <%= button_to "Mark Applied", user_job_postings_path(job_posting_id: job.id, status: 'applied'), class: "btn btn-xs rounded-lg bg-emerald-900/20 text-emerald-500 border-none font-bold" %>
-                  <%= button_to "Remove", user_job_posting_path(user_job), method: :delete, class: "text-rose-500 text-xs font-bold opacity-70 hover:opacity-100", title: "Remove" %>
-                </div>
+              </div>
+              <div class="mt-4 flex gap-2">
+                <%= button_to "Mark Applied", user_job_postings_path(job_posting_id: job.id, status: 'applied'), class: "btn btn-xs rounded-lg bg-emerald-900/20 text-emerald-500 border-none font-bold" %>
+                <%= form_with model: user_job, method: :patch, class: "flex items-center gap-1" do |f| %>
+                  <%= f.label :follow_up_at, "Follow up", class: "sr-only" %>
+                  <%= f.datetime_local_field :follow_up_at, class: "input input-bordered input-xs bg-base-300 text-white", aria: { label: "Follow-up date for #{job.title}" } %>
+                  <%= f.submit "Set", class: "btn btn-xs rounded-lg text-slate-400 border-white/10" %>
+                <% end %>
               </div>
             </div>
           <% end %>
@@ -80,17 +116,18 @@
     </div>
 
     <div class="space-y-6">
-      <h3 class="text-xs font-bold text-accent border-b border-accent/10 pb-4">Applications</h3>
+      <h3 class="flex items-center justify-between text-xs font-bold text-accent border-b border-accent/10 pb-4"><span>Applications</span><span class="badge badge-sm border-accent/20 text-accent"><%= @applied.size %></span></h3>
       <% if @applied.any? %>
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div class="space-y-4">
           <% @applied.each do |user_job| %>
             <% job = user_job.job_posting %>
-            <div class="card-neural p-6 border border-accent/20 h-full">
-              <div class="flex flex-col gap-5 h-full">
-                <div class="min-w-0">
-                  <div class="text-xs font-bold text-slate-500 mb-1"><%= job.company_name %></div>
-                  <h4 class="text-lg font-black text-white truncate"><%= link_to job.title, job_posting_path(job) %></h4>
-                  <div class="mt-3 flex flex-wrap items-center gap-2">
+            <div class="card-neural border border-accent/20 p-6">
+              <div class="flex items-start justify-between gap-4">
+                <div class="text-xs font-bold text-slate-500 mb-1"><%= job.company_name %></div>
+                <label class="flex items-center gap-1.5 text-[10px] font-bold text-slate-500"><%= check_box_tag "user_job_posting_ids[]", user_job.id, false, form: "pipeline-bulk-form", class: "checkbox checkbox-xs checkbox-primary", aria: { label: "Select #{job.title}" } %> Select</label>
+              </div>
+              <h4 class="text-lg font-black text-white"><%= link_to job.title, job_posting_path(job) %></h4>
+              <div class="mt-4 flex flex-wrap items-center gap-2">
                 <span class="px-2 py-1 rounded bg-accent/20 text-accent text-xs font-bold border border-accent/10">Applied</span>
                 <%# Employer response, kept visually distinct from the "Applied" badge above --
                     they're different facts (what he did vs. what the employer did) and
@@ -122,23 +159,12 @@
                     tracked <%= user_job.created_at.strftime("%b %-d, %Y") %>
                   </span>
                 <% end %>
-                  </div>
-                </div>
-                <div class="flex flex-wrap lg:flex-col gap-2 text-xs font-bold">
-                  <span class="text-slate-500"><%= job.location.presence || "Location unknown" %></span>
-                  <% if job.data['is_remote'] %><span class="text-emerald-500">Remote eligible</span><% end %>
-                  <% if user_job.match_score.present? %><span class="text-primary"><%= user_job.match_score %>% match</span><% end %>
-                </div>
-                <div class="flex flex-wrap gap-2 text-xs font-bold border-t border-white/5 pt-4">
-                  <span class="text-accent">Applied <%= user_job.applied_at ? time_ago_in_words(user_job.applied_at) + " ago" : "date unknown" %></span>
-                  <% if user_job.outcome.present? %><span class="text-warning"><%= user_job.outcome.humanize %></span><% else %><span class="text-slate-500">Awaiting employer</span><% end %>
-                  <% if user_job.interview_prep_pack.present? %><span class="text-success">Prep pack ready</span><% end %>
-                </div>
-                <div class="flex items-center gap-3 mt-auto pt-2">
-                  <%= link_to "Open posting", job_posting_path(job), class: "text-xs font-bold text-primary hover:underline" %>
-                  <%= link_to "View timeline", job_posting_path(job, anchor: "pipeline"), class: "text-xs font-bold text-slate-400 hover:text-white" %>
-                </div>
               </div>
+              <%= form_with model: user_job, method: :patch, class: "mt-4 flex items-center gap-1" do |f| %>
+                <%= f.label :follow_up_at, "Follow up", class: "text-xs font-bold text-slate-500" %>
+                <%= f.datetime_local_field :follow_up_at, class: "input input-bordered input-xs bg-base-300 text-white", aria: { label: "Follow-up date for #{job.title}" } %>
+                <%= f.submit "Set", class: "btn btn-xs rounded-lg text-slate-400 border-white/10" %>
+              <% end %>
             </div>
           <% end %>
         </div>
@@ -149,4 +175,5 @@
       <% end %>
     </div>
   </div>
+  <% end %>
 </div>

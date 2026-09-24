@@ -1,27 +1,36 @@
 # frozen_string_literal: true
 
-# == Schema Information
+# ## Schema Information
 #
-# Table name: sources
+# Table name: `sources`
 #
-#  id         :bigint           not null, primary key
-#  event      :jsonb            not null
-#  payload    :jsonb            not null
-#  signature  :string           not null
-#  created_at :datetime         not null
-#  updated_at :datetime         not null
-#  origin_id  :bigint
+# ### Columns
 #
-# Indexes
+# Name              | Type               | Attributes
+# ----------------- | ------------------ | ---------------------------
+# **`id`**          | `bigint`           | `not null, primary key`
+# **`event`**       | `jsonb`            | `not null`
+# **`payload`**     | `jsonb`            | `not null`
+# **`signature`**   | `string`           | `not null`
+# **`created_at`**  | `datetime`         | `not null`
+# **`updated_at`**  | `datetime`         | `not null`
+# **`origin_id`**   | `bigint`           |
 #
-#  index_sources_on_event      (event) USING gin
-#  index_sources_on_origin_id  (origin_id)
-#  index_sources_on_payload    (payload) USING gin
-#  index_sources_on_signature  (signature) UNIQUE
+# ### Indexes
 #
-# Foreign Keys
+# * `index_sources_on_event` (_using_ gin):
+#     * **`event`**
+# * `index_sources_on_origin_id`:
+#     * **`origin_id`**
+# * `index_sources_on_payload` (_using_ gin):
+#     * **`payload`**
+# * `index_sources_on_signature` (_unique_):
+#     * **`signature`**
 #
-#  fk_rails_...  (origin_id => origins.id)
+# ### Foreign Keys
+#
+# * `fk_rails_...`:
+#     * **`origin_id => origins.id`**
 #
 FactoryBot.define do
   factory :source do

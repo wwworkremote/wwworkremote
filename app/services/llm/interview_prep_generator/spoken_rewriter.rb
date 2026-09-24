@@ -20,8 +20,8 @@ class LLM::InterviewPrepGenerator::SpokenRewriter
     colons and dashes:
       title: "the pack title, every word and acronym spelled out"
       pronunciation:
-        "DSP": "D S P"
-        "Example": "BAY sis"
+        "API": "A P I"
+        "Acme": "ACK mee"
         (one line per proper noun or acronym a speech engine could stumble on)
       sections:
         - "The Setup"
@@ -35,8 +35,8 @@ class LLM::InterviewPrepGenerator::SpokenRewriter
       not "etc.", "and" not "&", "with" not "w/", "about" not "~", "percent" not "%",
       "React and JavaScript" not "React/JS", "then" or "leads to" not an arrow.
     - Expand every acronym in full on first use; the short form is fine afterward.
-    - Write numbers as spoken: "one hundred nineteen thousand to one hundred sixty thousand
-      dollars" not "$Example"; "under one hundred milliseconds" not "sub-100ms"; "ninety-
+    - Write numbers as spoken: "one hundred twenty thousand to one hundred fifty thousand
+      dollars" not "$120–150K"; "under one hundred milliseconds" not "sub-100ms"; "ninety-
       ninth percentile" not "p99"; "four percent" not "4%". Ranges use the word "to".
     - No tables and no code blocks -- convert a table to a heading with a short bullet list.
     - No emoji. No bare URLs -- name the source instead.

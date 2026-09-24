@@ -5,6 +5,7 @@
 # show/update/reformat share nothing with this beyond the class -- so the
 # controller can grow member actions without tripping ClassLength on an
 # unrelated concern.
+# rubocop:disable-next Metrics/ModuleLength
 module JobPostingFiltering
   extend ActiveSupport::Concern
 
@@ -16,12 +17,24 @@ module JobPostingFiltering
     data_leadership: "Data Leadership"
   }.freeze
 
+  STATUS_FILTER_LABELS = {
+    active: "Active",
+    interested: "Interested",
+    skipped: "Seen",
+    archived: "Archived",
+    all: "All"
+  }.freeze
+
   included do
-    helper_method :role_family_labels, :active_filter_params
+    helper_method :role_family_labels, :status_filter_labels, :active_filter_params
   end
 
   def role_family_labels
     ROLE_FAMILY_LABELS
+  end
+
+  def status_filter_labels
+    STATUS_FILTER_LABELS
   end
 
   # Single source of truth for "every active filter, as URL params" -- every
@@ -31,18 +44,32 @@ module JobPostingFiltering
   def active_filter_params
     {
       q: @query, company: @company, source_id: @source_id, role_family: @role_family,
-      location: @location, remote: (@remote ? "1" : nil), contract: (@contract ? "1" : nil), sort: @sort
+      location: @location, remote: (@remote ? "1" : nil), contract: (@contract ? "1" : nil),
+      tracked: (@tracked ? "1" : nil), packet: (@packet ? "1" : nil), lead: (@lead ? "1" : nil),
+      application_method: @application_method, workplace_type: @workplace_type,
+      sort: @sort, status: (@status_filter.present? && @status_filter != "active" ? @status_filter : nil)
     }
   end
 
   private
 
+  # rubocop:disable-next Metrics/AbcSize, Metrics/MethodLength
   def assign_filter_params
     @query = params[:q]
     @company = params[:company]
     @source_id = params[:source_id]
     @role_family = valid_role_family_param
+    @status_filter = valid_status_filter_param
+    @tracked = params[:tracked] == "1"
+    @packet = params[:packet] == "1"
+    @lead = params[:lead] == "1"
+    @application_method = params[:application_method].presence_in(%w[easy_apply external_site])
+    @workplace_type = params[:workplace_type].presence_in(%w[remote hybrid on_site])
     assign_location_params
+  end
+
+  def valid_status_filter_param
+    params[:status] if STATUS_FILTER_LABELS.key?(params[:status]&.to_sym)
   end
 
   def valid_sort_param
@@ -67,12 +94,19 @@ module JobPostingFiltering
     scope = scope.where(company_name: @company) if @company.present?
     scope = scope.where(source_id: @source_id) if @source_id.present?
     scope = apply_location_filter(scope)
+    scope = scope.where(id: current_user.user_job_postings.select(:job_posting_id)) if @tracked
+    if @packet
+      scope = scope.where(id: current_user.user_job_postings.where.not(cover_letter: nil).select(:job_posting_id))
+    end
+    scope = scope.where(id: Lead.select(:job_posting_id)) if @lead
+    scope = scope.where("job_postings.data ->> 'application_method' = ?", @application_method) if @application_method
+    scope = scope.where("job_postings.data ->> 'workplace_type' = ?", @workplace_type) if @workplace_type
     apply_query_and_role_family(scope)
   end
 
-  # Location text and "Remote" combine as OR, not AND -- "Chicago" + Remote
-  # checked means jobs near Chicago OR remote (either is accessible), the
-  # standard job-board convention, not jobs that are somehow both at once.
+  # Location text means commute eligibility; Remote means remote eligibility.
+  # When both are selected they are alternative paths, never evidence that a
+  # remote job is available in the requested country or locale.
   def apply_location_filter(scope)
     filter = location_filter_scope
     filter ? scope.merge(filter) : scope
@@ -98,13 +132,49 @@ module JobPostingFiltering
   # relevance wins over recency once a query is present.
   def apply_search(scope)
     ranked_ids = JobPosting.hybrid_search(@query, limit: 200).pluck(:id)
+    ranked_ids |= company_name_match_ids
     scope.where(id: ranked_ids).reorder(nil).in_order_of(:id, ranked_ids)
+  end
+
+  # Company records are canonical for newer imports, while older postings
+  # retain a denormalized company_name. Hybrid search indexes title/body only,
+  # so include both storage paths or company searches silently miss roles.
+  def company_name_match_ids
+    pattern = "%#{ActiveRecord::Base.sanitize_sql_like(@query)}%"
+    JobPosting.left_joins(:company)
+              .where("job_postings.company_name ILIKE :pattern OR companies.name ILIKE :pattern", pattern: pattern)
+              .limit(200).pluck(:id)
   end
 
   def base_job_postings
     scope = base_sort_scope.geo_allowed.includes(:company, source: :origin)
-    scope = scope.where.not(status: %w[ignored purged expired]) if params[:status].blank?
-    scope
+    scope = scope.with_user_pipeline(current_user) unless @sort == "match_score"
+    apply_status_filter(scope)
+  end
+
+  # rubocop:disable-next Metrics/MethodLength
+  def apply_status_filter(scope)
+    case @status_filter
+    when "interested"
+      scope.where(
+        "user_job_postings.status IN (?) OR user_job_postings.priority_flag = true",
+        %w[favorited applied interview]
+      )
+    when "skipped"
+      scope.where("user_job_postings.status = 'skipped'")
+    when "archived"
+      scope.where(
+        "job_postings.status IN (?) OR user_job_postings.status = 'archived' OR user_job_postings.outcome = 'rejected'",
+        %w[ignored purged expired archived]
+      )
+    when "all"
+      scope
+    else
+      # Default: hide un-pursued / dead / rejected / dismissed postings
+      scope.where.not(job_postings: { status: %w[ignored purged expired archived] })
+           .where("user_job_postings.status IS NULL OR user_job_postings.status != ?", "archived")
+           .where("user_job_postings.outcome IS NULL OR user_job_postings.outcome != ?", "rejected")
+    end
   end
 
   def base_sort_scope

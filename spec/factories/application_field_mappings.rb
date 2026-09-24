@@ -1,42 +1,55 @@
 # frozen_string_literal: true
 
-# == Schema Information
+# ## Schema Information
 #
-# Table name: application_field_mappings
+# Table name: `application_field_mappings`
 #
-#  id                          :bigint           not null, primary key
-#  context                     :jsonb            not null
-#  element_descriptor          :jsonb            not null
-#  element_fingerprint         :string
-#  field_key                   :string           not null
-#  field_label                 :string           not null
-#  guided_session_token        :string
-#  mapped_at                   :datetime         not null
-#  page_step                   :string
-#  page_title                  :string
-#  page_url                    :string
-#  provider                    :string
-#  semantic_key                :string           not null
-#  semantic_label              :string
-#  source_kind                 :string           not null
-#  created_at                  :datetime         not null
-#  updated_at                  :datetime         not null
-#  application_field_answer_id :bigint
-#  trace_id                    :string
-#  user_job_posting_id         :bigint           not null
+# ### Columns
 #
-# Indexes
+# Name                               | Type               | Attributes
+# ---------------------------------- | ------------------ | ---------------------------
+# **`id`**                           | `bigint`           | `not null, primary key`
+# **`context`**                      | `jsonb`            | `not null`
+# **`element_descriptor`**           | `jsonb`            | `not null`
+# **`element_fingerprint`**          | `string`           |
+# **`field_key`**                    | `string`           | `not null`
+# **`field_label`**                  | `string`           | `not null`
+# **`guided_session_token`**         | `string`           |
+# **`mapped_at`**                    | `datetime`         | `not null`
+# **`page_step`**                    | `string`           |
+# **`page_title`**                   | `string`           |
+# **`page_url`**                     | `string`           |
+# **`provider`**                     | `string`           |
+# **`semantic_key`**                 | `string`           | `not null`
+# **`semantic_label`**               | `string`           |
+# **`source_kind`**                  | `string`           | `not null`
+# **`created_at`**                   | `datetime`         | `not null`
+# **`updated_at`**                   | `datetime`         | `not null`
+# **`application_field_answer_id`**  | `bigint`           |
+# **`trace_id`**                     | `string`           |
+# **`user_job_posting_id`**          | `bigint`           | `not null`
 #
-#  idx_app_field_mappings_on_application_field_semantic      (user_job_posting_id,field_key,semantic_key)
-#  idx_on_application_field_answer_id_bd595d0770             (application_field_answer_id)
-#  index_application_field_mappings_on_guided_session_token  (guided_session_token)
-#  index_application_field_mappings_on_trace_id              (trace_id)
-#  index_application_field_mappings_on_user_job_posting_id   (user_job_posting_id)
+# ### Indexes
 #
-# Foreign Keys
+# * `idx_app_field_mappings_on_application_field_semantic`:
+#     * **`user_job_posting_id`**
+#     * **`field_key`**
+#     * **`semantic_key`**
+# * `idx_on_application_field_answer_id_bd595d0770`:
+#     * **`application_field_answer_id`**
+# * `index_application_field_mappings_on_guided_session_token`:
+#     * **`guided_session_token`**
+# * `index_application_field_mappings_on_trace_id`:
+#     * **`trace_id`**
+# * `index_application_field_mappings_on_user_job_posting_id`:
+#     * **`user_job_posting_id`**
 #
-#  fk_rails_...  (application_field_answer_id => application_field_answers.id)
-#  fk_rails_...  (user_job_posting_id => user_job_postings.id)
+# ### Foreign Keys
+#
+# * `fk_rails_...`:
+#     * **`application_field_answer_id => application_field_answers.id`**
+# * `fk_rails_...`:
+#     * **`user_job_posting_id => user_job_postings.id`**
 #
 FactoryBot.define do
   factory :application_field_mapping do

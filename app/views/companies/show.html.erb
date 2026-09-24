@@ -21,9 +21,10 @@
             <h1 class="text-4xl font-black text-white mb-3 tracking-tight leading-none"><%= @company.name %></h1>
             <p class="text-slate-500 font-bold text-sm"><%= t('.subtitle') %></p>
             <% if @company.in_cooldown? %>
-              <span class="badge badge-outline border-warning/40 text-warning text-xs font-bold mt-3">
-                <%= t('.cooldown_until', date: @company.cooldown_ends_at.to_date) %>
-              </span>
+              <div class="mt-4 rounded-xl border border-warning/25 bg-warning/5 p-3 text-xs font-bold text-warning">
+                <div>Cooldown active · <%= distance_of_time_in_words(Time.current, @company.cooldown_ends_at) %> remaining</div>
+                <div class="mt-1 text-warning/70">cooldown until <%= @company.cooldown_ends_at.to_date %> · rewarm date · based on last decline <%= @company.last_declined_at.to_date %></div>
+              </div>
             <% end %>
           </div>
           <% if @company.ingestion_enabled? %>

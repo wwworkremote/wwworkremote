@@ -22,8 +22,11 @@ class JobPostingTriageController < ApplicationController
   end
 
   def skip_current!
+    posting_id = params[:skip].to_i
+    return if posting_id.zero?
+
     session[:triage_skipped_ids] ||= []
-    session[:triage_skipped_ids] << params[:skip].to_i
+    session[:triage_skipped_ids] << posting_id
   end
 
   # without_pipeline_activity excludes postings Mike has already decided on

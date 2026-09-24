@@ -1,27 +1,35 @@
 # frozen_string_literal: true
 
-# == Schema Information
+# ## Schema Information
 #
-# Table name: company_pipeline_steps
+# Table name: `company_pipeline_steps`
 #
-#  id         :bigint           not null, primary key
-#  link       :string
-#  note       :text
-#  status     :string
-#  created_at :datetime         not null
-#  updated_at :datetime         not null
-#  company_id :bigint           not null
-#  user_id    :bigint
+# ### Columns
 #
-# Indexes
+# Name              | Type               | Attributes
+# ----------------- | ------------------ | ---------------------------
+# **`id`**          | `bigint`           | `not null, primary key`
+# **`link`**        | `string`           |
+# **`note`**        | `text`             |
+# **`status`**      | `string`           |
+# **`created_at`**  | `datetime`         | `not null`
+# **`updated_at`**  | `datetime`         | `not null`
+# **`company_id`**  | `bigint`           | `not null`
+# **`user_id`**     | `bigint`           |
 #
-#  index_company_pipeline_steps_on_company_id  (company_id)
-#  index_company_pipeline_steps_on_user_id     (user_id)
+# ### Indexes
 #
-# Foreign Keys
+# * `index_company_pipeline_steps_on_company_id`:
+#     * **`company_id`**
+# * `index_company_pipeline_steps_on_user_id`:
+#     * **`user_id`**
 #
-#  fk_rails_...  (company_id => companies.id)
-#  fk_rails_...  (user_id => users.id)
+# ### Foreign Keys
+#
+# * `fk_rails_...`:
+#     * **`company_id => companies.id`**
+# * `fk_rails_...`:
+#     * **`user_id => users.id`**
 #
 class CompanyPipelineStep < ApplicationRecord
   belongs_to :company

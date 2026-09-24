@@ -2,7 +2,7 @@
 
 <div class="mb-10 text-xs font-bold opacity-60">
   <div class="flex items-center gap-3">
-    <%= link_to t('.breadcrumb_root'), job_postings_path, class: "hover:text-primary transition-all" %>
+    <%= link_to t('.breadcrumb_root'), (@return_to.presence || job_postings_path), class: "hover:text-primary transition-all" %>
     <%= heroicon "chevron-right", variant: :outline, options: { class: "w-3 h-3" } %>
     <span class="text-white"><%= truncate(@job_posting.title, length: 48) %></span>
   </div>
@@ -42,30 +42,38 @@
         </h1>
         <p class="text-xl font-bold text-secondary mb-8">
           <% if @job_posting.company_record %>
-            <%= link_to @job_posting.company_name, company_path(@job_posting.company_record), class: "hover:underline" %>
+            <%= link_to @job_posting.company_record.name, company_path(@job_posting.company_record), class: "hover:underline" %>
           <% else %>
-            <%= link_to @job_posting.company_name, job_postings_path(company: @job_posting.company_name), class: "hover:underline" %>
+            <%= link_to (@job_posting.company_name.presence || t('.company_unknown')), job_postings_path(company: @job_posting.company_name), class: "hover:underline" %>
           <% end %>
         </p>
 
         <div class="flex flex-wrap gap-6 text-xs font-bold text-base-content/60">
           <div class="flex items-center gap-2">
             <%= heroicon "map-pin", variant: :solid, options: { class: "w-4 h-4 text-primary" } %>
-            <span class="text-white"><%= @job_posting.location.presence || t('.remote_fallback') %></span>
+            <span class="text-white"><%= @job_posting.location.presence || t('.location_unknown') %></span>
           </div>
-          <% if Array(@job_posting.data["countries"]).present? %>
-            <div class="flex items-center gap-2">
-              <%= heroicon "flag", variant: :solid, options: { class: "w-4 h-4 text-info" } %>
-              <span class="text-white"><%= Array(@job_posting.data["countries"]).join(" · ") %></span>
-            </div>
-          <% end %>
           <div class="flex items-center gap-2">
             <%= heroicon "calendar-days", options: { class: "w-4 h-4 text-accent" } %>
-            <span class="text-white"><%= t('.posted_prefix') %> <%= @job_posting.published_at&.strftime("%b %-d, %Y") || t('.posted_unknown') %></span>
+            <span class="text-white">
+              <% if @job_posting.published_at %>
+                <%= t('.posted_prefix') %> <%= @job_posting.published_at.strftime("%b %-d, %Y") %>
+              <% else %>
+                <%= t('.posted_prefix') %> <%= t('.posted_unknown') %>
+              <% end %>
+              <span class="ml-2 text-base-content/50">· Known since <%= @job_posting.created_at.strftime("%b %-d, %Y") %> (<%= time_ago_in_words(@job_posting.created_at) %> ago)</span>
+            </span>
           </div>
           <div class="flex items-center gap-2">
             <%= heroicon "clock", options: { class: "w-4 h-4 text-warning" } %>
-            <span class="text-white"><%= t('.freshness_label') %>: <%= @job_posting.freshness.to_s.humanize %></span>
+            <span class="text-white">
+              <% if @job_posting.published_at %>
+                <%= t('.freshness_label') %>: <%= @job_posting.freshness.to_s.humanize %>
+              <% else %>
+                <%= t('.freshness_label') %>: Employer age unknown
+                <span class="ml-2 text-base-content/50">· Known since <%= @job_posting.created_at.strftime("%b %-d, %Y") %> (<%= time_ago_in_words(@job_posting.created_at) %> ago)</span>
+              <% end %>
+            </span>
           </div>
           <div class="flex items-center gap-2">
             <%= heroicon "eye", options: { class: "w-4 h-4 text-success" } %>
@@ -75,51 +83,217 @@
             <%= heroicon "globe-alt", options: { class: "w-4 h-4 text-secondary" } %>
             <span class="text-white"><%= t('.source_prefix') %> <%= @job_posting.source&.origin&.name || @job_posting.source&.name || t('.source_unknown') %></span>
           </div>
+          <% if @job_posting.data['remote'] == true || @job_posting.data['is_remote'] == true || @job_posting.location.to_s.match?(/remote/i) %>
+            <div class="flex items-center gap-2">
+              <%= heroicon "wifi", options: { class: "w-4 h-4 text-success" } %>
+              <span class="text-success">Remote-eligible</span>
+            </div>
+          <% end %>
+          <% if (workplace_type = @job_posting.data['workplace_type']).present? %>
+            <div class="flex items-center gap-2">
+              <%= heroicon "building-office-2", options: { class: "w-4 h-4 text-success" } %>
+              <span class="text-success"><%= workplace_type.humanize %></span>
+            </div>
+          <% end %>
+          <% if (application_method = @job_posting.data['application_method']).present? %>
+            <div class="flex items-center gap-2">
+              <%= heroicon "cursor-arrow-rays", options: { class: "w-4 h-4 text-accent" } %>
+              <span class="text-accent"><%= application_method == 'easy_apply' ? 'Easy Apply' : 'External application' %></span>
+            </div>
+          <% end %>
         </div>
 
-        <%# TASK-86 / TASK-148: scraped data is dirty by nature and there was no
-            way to fix it without a console. Inline edit-in-place: this frame
-            shows a pencil in display mode and the full field editor in edit
-            mode (?section=core), re-rendering just itself on save. %>
-        <%= turbo_frame_tag dom_id(@job_posting, :core) do %>
-          <% if params[:section] == "core" || @editing == "core" %>
-            <%= render "job_postings/core_form", job_posting: @job_posting %>
-          <% else %>
-            <%= link_to job_posting_path(@job_posting, section: "core"),
-                  class: "inline-flex items-center gap-1 mt-6 text-xs font-bold text-base-content/40 hover:text-white transition-colors" do %>
-              <%= heroicon "pencil-square", options: { class: "w-3.5 h-3.5" } %> Edit posting details
+        <section aria-labelledby="posting-control-plane" class="relative z-10 mt-8 rounded-2xl border border-primary/25 bg-primary/5 p-4 sm:p-5">
+          <div class="flex flex-wrap items-start justify-between gap-4">
+            <div>
+              <h2 id="posting-control-plane" class="text-xs font-black uppercase tracking-widest text-primary">Control plane</h2>
+              <p class="mt-1 text-xs text-slate-400">Move this role through your search, apply, and review the evidence.</p>
+            </div>
+            <% if user_job&.persisted? %>
+              <span class="rounded-full border border-white/10 px-3 py-1 text-xs font-bold text-slate-300">Pipeline: <%= user_job.status.humanize %></span>
+              <%= form_with url: select_persona_job_posting_path(@job_posting), method: :post, class: "flex items-center gap-2" do %>
+                <%= label_tag :persona_id, "Role persona", class: "text-[10px] font-black uppercase tracking-widest text-slate-500" %>
+                <%= select_tag :persona_id, options_for_select(@personas.map { |persona| [persona[:label], persona[:id]] }, user_job.resume_persona_id), prompt: "Choose persona", class: "select select-xs select-bordered bg-black/20 text-xs", onchange: "this.form.requestSubmit()" %>
+              <% end %>
+              <% if user_job.outcome.in?(UserJobPosting::TERMINAL_OUTCOMES) %>
+                <span class="rounded-full border border-rose-500/30 bg-rose-500/10 px-3 py-1 text-xs font-bold text-rose-300"><%= user_job.outcome.humanize %> · resolved</span>
+              <% end %>
+            <% if @application_receipt %>
+              <%= link_to "View submission receipt", @application_receipt.link, target: "_blank", rel: "noopener", class: "rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-3 py-1 text-xs font-black text-emerald-300 hover:bg-emerald-500/20", title: "Open the captured external confirmation for this application" %>
             <% end %>
+            <% else %>
+              <span class="rounded-full border border-white/10 px-3 py-1 text-xs font-bold text-slate-500">Not tracked yet</span>
+            <% end %>
+            <%= link_to "View application cycle", application_cycle_job_posting_path(@job_posting), class: "rounded-lg border border-accent/30 bg-accent/10 px-3 py-1 text-xs font-black text-accent hover:bg-accent hover:text-white", title: "Show deterministic gates, next action, and receipts as JSON" %>
+          </div>
+          <% if user_job&.outcome == "rejected" %>
+            <div class="mt-4 rounded-xl border border-rose-500/20 bg-rose-500/5 p-3 text-xs font-bold text-rose-200">
+              This role is resolved and is no longer shown in active board lanes.
+              <%= link_to "View resolved outcomes", user_job_postings_path(status: "outcomes", view: "board"), class: "ml-1 underline hover:text-white" %>.
+              <% if @job_posting.company_record&.in_cooldown? %>
+                <%= link_to "See company cooldown", company_path(@job_posting.company_record), class: "ml-1 underline hover:text-white" %>.
+              <% end %>
+            </div>
           <% end %>
-        <% end %>
+          <div class="mt-4 flex flex-wrap items-center gap-2">
+            <span class="mr-2 text-[10px] font-black uppercase tracking-widest text-slate-500">Advance</span>
+            <% (user_job || UserJobPosting.new).available_status_events.each do |event| %>
+              <% event_label = { "interview" => "Move to interview", "apply" => "Mark applied", "favorite" => "Save role", "archive" => "Archive" }.fetch(event, t(".activity.events.#{event}")) %>
+              <%= button_to event_label, user_job_postings_path(job_posting_id: @job_posting.id, status: event), class: "btn btn-primary btn-sm rounded-lg font-bold" %>
+            <% end %>
+            <% if @job_posting.target_url.present? %>
+              <span class="ml-2 border-l border-white/15 pl-3 text-[10px] font-black uppercase tracking-widest text-slate-500">Apply</span>
+              <%= link_to "Re-ingest source data", outbound_link_path(url: "#{@job_posting.target_url}#{ @job_posting.target_url.include?('?') ? '&' : '?' }wwwr_id=#{@job_posting.id}", job_posting_id: @job_posting.id), target: "_blank", rel: "noopener", class: "btn btn-ghost btn-sm rounded-lg border border-primary/30 font-bold text-primary", title: "Open the full source posting in extension update mode and refresh this record" %>
+              <%= button_to "Open employer application", apply_on_site_job_posting_path(@job_posting), form: { target: "_blank" }, class: "btn btn-secondary btn-sm rounded-lg font-bold" %>
+              <%= button_to "Preview application flow", start_supervised_application_job_posting_path(@job_posting), class: "btn btn-ghost btn-sm rounded-lg border border-primary/30 font-bold text-primary", title: "Record the employer flow without filling or submitting anything" %>
+              <% if user_job&.guided_sessions&.exists? %>
+                <span class="text-xs font-bold text-slate-500"><%= pluralize(user_job.guided_sessions.count, "rehearsal") %> recorded</span>
+              <% end %>
+            <% end %>
+            <% if user_job&.match_analysis.present? %>
+              <%= button_to "Prepare application package", generate_artifacts_user_job_postings_path(job_posting_id: @job_posting.id), class: "btn btn-accent btn-sm rounded-lg font-bold", title: "Generate a tailored resume, cover letter, and application answers", data: { turbo_confirm: "Prepare the application package with AI? This may be slow and will generate tailored resume, cover letter, and application answers." } %>
+              <% if user_job.cover_letter.present? || user_job.resume_persona_id.present? %>
+                <%= link_to "View packet ↓", "#application-packet", class: "rounded-lg border border-accent/30 px-2 py-1 text-xs font-bold text-accent hover:bg-accent hover:text-white" %>
+              <% end %>
+            <% end %>
+          </div>
+          <details class="mt-3 border-t border-white/10 pt-3">
+            <summary class="cursor-pointer list-none text-[10px] font-black uppercase tracking-widest text-slate-500 hover:text-white">More actions · context</summary>
+            <div class="mt-3 flex flex-wrap items-center gap-3">
+            <% if @job_posting.leads.any? %>
+              <%= link_to "Open lead", admin_lead_path(@job_posting.leads.first), class: "rounded-lg border border-accent/30 bg-accent/10 px-2 py-1 text-xs font-black text-accent hover:bg-accent hover:text-white", title: "Review the captured lead and its application context" %>
+            <% end %>
+            <span data-controller="clipboard" class="inline-flex items-center gap-2">
+              <button type="button" data-action="clipboard#copy" class="rounded-lg border border-white/10 px-2 py-1 text-xs font-bold text-slate-400 hover:border-white/25 hover:text-white">Copy link</button>
+              <textarea data-clipboard-target="source" class="hidden" readonly><%= job_posting_url(@job_posting) %></textarea>
+            </span>
+            <%= link_to "Find similar roles", job_postings_path(q: @job_posting.title), class: "rounded-lg border border-white/10 px-2 py-1 text-xs font-bold text-slate-400 hover:border-white/25 hover:text-white" %>
+            <%= link_to "View full timeline ↓", "#activity", class: "rounded-lg border border-white/10 px-2 py-1 text-xs font-bold text-slate-400 hover:border-white/25 hover:text-white" %>
+            </div>
+          </details>
+          <% if user_job&.persisted? && user_job.status.in?(%w[applied interview]) %>
+            <div class="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-warning/20 bg-warning/5 p-3">
+              <div>
+                <div class="text-xs font-black text-warning">Next action: follow up</div>
+                <p class="mt-1 text-xs text-slate-400">
+                  <% if user_job.follow_up_at.present? %>
+                    Due <%= user_job.follow_up_at.strftime("%b %-d, %Y at %-l:%M %p") %>
+                    <% if user_job.follow_up_at <= Time.current %><span class="font-bold text-warning"> · due now</span><% end %>
+                  <% else %>
+                    No follow-up scheduled. Set one before this application goes quiet.
+                  <% end %>
+                </p>
+              </div>
+              <%= form_with model: user_job, method: :patch, class: "flex items-center gap-2" do |f| %>
+                <%= f.label :follow_up_at, "Follow-up date", class: "sr-only" %>
+                <%= f.datetime_local_field :follow_up_at, value: user_job.follow_up_at&.strftime("%Y-%m-%dT%H:%M"), class: "input input-bordered input-xs bg-base-300 text-white", aria: { label: "Follow-up date" } %>
+                <%= f.submit user_job.follow_up_at.present? ? "Reschedule" : "Schedule follow-up", class: "btn btn-warning btn-xs rounded-lg font-bold" %>
+              <% end %>
+            </div>
+          <% end %>
+        </section>
+
+        <%# TASK-86: scraped data is dirty by nature (#5034's title had a leading
+            character eaten during extraction) and there was previously no way to
+            fix it without a console. A <details> disclosure, not a Stimulus
+            controller -- the context panel's "raw data" collapsible already
+            establishes this as the app's pattern for optional dense content. %>
+        <details class="mt-6">
+          <summary class="text-xs font-bold text-base-content/40 cursor-pointer hover:text-white transition-colors">
+            Edit title / company / location
+          </summary>
+          <%= form_with model: @job_posting, url: job_posting_path(@job_posting), method: :patch,
+                        class: "mt-4 grid grid-cols-1 md:grid-cols-3 gap-3" do |f| %>
+            <%= f.text_field :title, class: "input input-bordered bg-base-300 w-full rounded-xl text-sm" %>
+            <%= f.text_field :company_name, class: "input input-bordered bg-base-300 w-full rounded-xl text-sm" %>
+            <%= f.text_field :location, class: "input input-bordered bg-base-300 w-full rounded-xl text-sm" %>
+            <%= f.submit "Save", class: "md:col-span-3 py-2 rounded-xl bg-white/5 text-xs font-bold hover:bg-white/10 transition-all cursor-pointer" %>
+          <% end %>
+        </details>
       </div>
     </header>
 
     <div class="bg-base-200 border border-white/5 rounded-2xl p-5 sm:p-10 shadow-2xl">
       <%= turbo_stream_from @job_posting %>
-      <%= render "description", job_posting: @job_posting %>
+      <div class="mb-8">
+        <div role="tablist" aria-label="Posting information" class="tabs tabs-lifted">
+          <input type="radio" name="posting_information_tabs" role="tab" class="tab text-xs font-black" aria-label="Description" checked>
+          <section id="posting-description" role="tabpanel" class="tab-content rounded-box border-white/10 bg-base-200 p-6 sm:p-8">
+          <%= render "description", job_posting: @job_posting %>
+          </section>
+          <input type="radio" name="posting_information_tabs" role="tab" class="tab text-xs font-black" aria-label="Match analysis">
+          <section id="posting-match" role="tabpanel" aria-label="Match analysis" class="tab-content rounded-box border-white/10 bg-base-200 p-6 sm:p-8">
+          <div class="flex items-center justify-between mb-5">
+            <div>
+              <h2 class="text-sm font-black text-white">How this role fits your search</h2>
+              <p class="mt-1 text-xs text-slate-500">AI compares this posting with your profile; it is decision support, not a guarantee.</p>
+            </div>
+            <% if current_user.career_profile&.resume_text.present? || current_user.career_profile&.work_experiences&.any? %>
+              <%= button_to user_job&.match_analysis.present? ? "Re-run match" : "Analyze match", analyze_match_user_job_postings_path(job_posting_id: @job_posting.id), class: "text-xs font-bold text-primary hover:text-white underline" %>
+            <% else %>
+              <%= link_to "Set up profile", edit_career_profile_path, class: "text-xs font-bold text-slate-400 hover:text-white underline" %>
+            <% end %>
+          </div>
+          <% if user_job&.match_analysis.present? %>
+            <div class="prose prose-invert max-w-none text-xs leading-relaxed"><%= markdown(user_job.match_analysis) %></div>
+          <% else %>
+            <div class="rounded-xl border border-dashed border-white/10 bg-white/5 p-6 text-center">
+              <div class="text-sm font-bold text-slate-400">No match analysis yet</div>
+              <p class="mt-2 text-xs text-slate-500">Run an analysis to decide whether this role deserves your next move.</p>
+            </div>
+          <% end %>
+          </section>
+          <% if user_job&.cover_letter.present? || user_job&.resume_persona_id.present? %>
+            <input type="radio" name="posting_information_tabs" role="tab" class="tab text-xs font-black" aria-label="Application packet">
+            <section role="tabpanel" aria-label="Application packet" class="tab-content rounded-box border-white/10 bg-base-200 p-6 sm:p-8">
+              <div class="flex items-start justify-between gap-4">
+                <div>
+                  <h2 class="text-sm font-black text-white">Application packet ready</h2>
+                  <p class="mt-1 text-xs text-slate-500">Generated assets for this posting. Review before using them with the employer.</p>
+                </div>
+                <%= link_to "Jump to full packet", "#application-packet", class: "text-xs font-bold text-accent underline hover:text-white" %>
+              </div>
+              <% if user_job.cover_letter.present? %>
+                <div class="mt-6 rounded-xl border border-accent/20 bg-accent/5 p-4">
+                  <div class="mb-3 text-xs font-black uppercase tracking-widest text-accent">Cover letter</div>
+                  <div class="prose prose-invert max-w-none text-xs leading-relaxed"><%= markdown(user_job.cover_letter) %></div>
+                </div>
+              <% end %>
+              <% if user_job.resume_persona_id.present? %>
+                <p class="mt-4 text-xs font-bold text-slate-400">Resume persona: <span class="text-white"><%= user_job.resume_persona_id %></span></p>
+              <% end %>
+            </section>
+          <% end %>
+      </div>
 
       <% if @job_posting.target_url.present? %>
-        <div class="mt-16 pt-10 border-t border-white/5 flex flex-wrap gap-4">
-          <%# POST, not a link: clicking through favorites the posting server-side
-              (TASK-86) before handing off to the same outbound-link tracking/
-              redirect every other exit link already uses. %>
-          <%= button_to t('.apply_on_site'), apply_on_site_job_posting_path(@job_posting),
-                        form: { target: "_blank" }, class: "btn btn-primary rounded-xl px-10 font-bold" %>
-
-          <%= link_to outbound_link_path(url: "#{@job_posting.target_url}#{ @job_posting.target_url.include?('?') ? '&' : '?' }wwwr_id=#{@job_posting.id}", job_posting_id: @job_posting.id), target: "_blank", class: "btn btn-ghost border-white/10 rounded-xl px-10 font-bold text-base-content/60 hover:text-white" do %>
-            <%= t('.open_source_listing') %>
-          <% end %>
+        <div class="mt-10 border-t border-white/5 pt-6 text-xs text-slate-500">
+          Employer application controls are available above in the control plane. <%= link_to "Open captured source listing", outbound_link_path(url: "#{@job_posting.target_url}#{ @job_posting.target_url.include?('?') ? '&' : '?' }wwwr_id=#{@job_posting.id}", job_posting_id: @job_posting.id), target: "_blank", class: "font-bold text-primary hover:text-white" %> for reference.
         </div>
-      <% end %>
+        <% end %>
     </div>
 
     <!-- Interview notes -->
-    <div id="interview-prep" class="card-neural p-10 shadow-2xl relative overflow-hidden scroll-mt-24">
+    <div id="application-workspace" class="card-neural p-10 shadow-2xl relative overflow-hidden">
       <div class="absolute top-0 right-0 p-8 opacity-5">
         <%= heroicon "beaker", options: { class: "w-24 h-24" } %>
       </div>
 
-      <h2 class="text-xs font-bold text-base-content/50 mb-10 pb-4 border-b border-white/5"><%= t('.interview_notes.heading') %></h2>
+      <h2 class="text-xs font-bold text-base-content/50 mb-10 pb-4 border-b border-white/5"><%= t('.interview_notes.heading') %> <span class="ml-2 text-[10px] font-normal text-slate-600">Application workspace</span></h2>
+
+      <div id="application-packet" class="mb-8 rounded-2xl border border-accent/30 bg-accent/5 p-5">
+        <div class="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <h3 class="text-sm font-black text-accent">Application packet</h3>
+            <p class="mt-1 text-xs text-slate-400">Generated materials for this posting. Review before using them.</p>
+          </div>
+          <% if user_job&.cover_letter.present? %>
+            <%= link_to "Open cover letter", "#cover-letter-panel", class: "btn btn-accent btn-sm rounded-lg font-bold" %>
+          <% else %>
+            <span class="text-xs font-bold text-slate-500">Resume persona only</span>
+          <% end %>
+        </div>
+      </div>
 
       <div class="space-y-12">
         <!-- Interview Prep Pack -->
@@ -137,7 +311,7 @@
                   <%= button_to t('.interview_notes.regenerate_prep'), generate_interview_prep_user_job_postings_path(job_posting_id: @job_posting.id, force: true), class: "text-xs font-bold text-slate-400 hover:text-white underline" %>
                 </div>
               </div>
-              <div class="prose-invert text-xs leading-relaxed"><%= markdown(user_job.interview_prep_pack) %></div>
+              <div class="prose prose-invert max-w-none text-xs leading-relaxed"><%= markdown(user_job.interview_prep_pack) %></div>
               <textarea data-clipboard-target="source" class="hidden" readonly><%= user_job.interview_prep_pack %></textarea>
               <% if user_job.interview_prep_pack_generated_at %>
                 <div class="text-xs text-slate-500 mt-4"><%= t('.interview_notes.prep_generated_at', time: time_ago_in_words(user_job.interview_prep_pack_generated_at)) %></div>
@@ -161,7 +335,8 @@
                     <% Array(hints['pronunciation']).each do |term, say| %><dt class="font-bold font-mono"><%= term %></dt><dd class="font-mono"><%= say %></dd><% end %>
                   </dl>
                 <% end %>
-                <div class="prose-invert text-xs leading-relaxed mt-3"><%= markdown(spoken_body) %></div>
+                <div class="prose prose-invert max-w-none text-xs leading-relaxed mt-3"><%= markdown(spoken_body) %></div>
+
                 <textarea data-clipboard-target="source" class="hidden" readonly><%= user_job.interview_prep_pack_spoken %></textarea>
                 <button type="button" data-action="clipboard#copy" class="mt-2 text-xs font-bold text-primary hover:text-white underline">
                   <span data-clipboard-target="label"><%= t('.interview_notes.copy_spoken') %></span>
@@ -173,7 +348,7 @@
               <%= heroicon "sparkles", variant: :solid, options: { class: "w-4 h-4" } %> <%= t('.interview_notes.prep_heading') %>
             </h3>
             <p class="text-xs text-slate-500 mb-4"><%= t('.interview_notes.prep_helper') %></p>
-            <%= button_to t('.interview_notes.generate_prep'), generate_interview_prep_user_job_postings_path(job_posting_id: @job_posting.id), class: "btn btn-primary btn-sm rounded-xl font-bold" %>
+            <%= button_to t('.interview_notes.generate_prep'), generate_interview_prep_user_job_postings_path(job_posting_id: @job_posting.id), class: "btn btn-primary btn-sm rounded-xl font-bold", data: { turbo_confirm: "Generate the interview prep pack with AI? This may be slow and will create a tailored preparation asset." } %>
           <% end %>
         </div>
 
@@ -191,31 +366,25 @@
 
         <!-- Session List -->
         <div class="space-y-8">
-          <% @job_posting.interview_sessions.ordered.includes(:interview_questions).each do |session| %>
+          <% @job_posting.interview_sessions.order(scheduled_at: :desc).each do |session| %>
             <div class="border-l-2 border-primary/30 pl-8 relative">
-              <div class="absolute -left-[9px] top-0 w-4 h-4 rounded-full <%= session.pending? ? "bg-primary/40" : "bg-primary" %>"></div>
+              <div class="absolute -left-[9px] top-0 w-4 h-4 rounded-full bg-primary animate-pulse"></div>
 
               <div class="flex justify-between items-start mb-4">
                 <div>
                   <div class="text-xs font-bold text-slate-400 mb-1">
-                    <% if session.position %>Round <%= session.position %> &middot; <% end %>
-                    <%= session.scheduled_at ? session.scheduled_at.strftime("%b %-d, %Y · %H:%M") : t('.interview_notes.not_scheduled') %>
+                    <%= session.scheduled_at&.strftime("%b %-d, %Y · %H:%M") || "Unscheduled" %>
                   </div>
-                  <h4 class="text-lg font-black text-white tracking-tight">
-                    <%= session.notes.presence || session.session_type.humanize %>
-                  </h4>
+                  <h4 class="text-lg font-black text-white tracking-tight"><%= session.session_type.humanize %></h4>
                 </div>
-                <div class="flex flex-col items-end gap-1">
-                  <div class="badge badge-outline border-primary/40 text-primary text-xs font-bold">
-                    <%= t('.interview_notes.vibe_label') %>: <%= session.vibe || t('.interview_notes.vibe_pending') %>
-                  </div>
-                  <% unless session.pending? %>
-                    <div class="badge badge-outline text-xs font-bold <%= session.outcome == "rejected" ? "border-error/40 text-error" : "border-success/40 text-success" %>">
-                      <%= session.outcome.humanize %>
-                    </div>
-                  <% end %>
+                <div class="badge badge-outline border-primary/40 text-primary text-xs font-bold">
+                  <%= t('.interview_notes.vibe_label') %>: <%= session.vibe || t('.interview_notes.vibe_pending') %>
                 </div>
               </div>
+              <%= form_with model: session, url: admin_job_posting_interview_session_path(@job_posting, session), method: :patch, class: "flex flex-wrap items-center gap-2 mb-4" do |form| %>
+                <%= form.select :outcome, [["Pending", "pending"], ["Passed", "passed"], ["Failed", "failed"], ["Cancelled", "cancelled"]], {}, class: "select select-bordered select-xs bg-base-300 text-white" %>
+                <%= form.submit "Record outcome", class: "btn btn-ghost btn-xs border-white/20 font-bold" %>
+              <% end %>
 
               <!-- Questions in this session -->
               <div class="mt-6 space-y-4">
@@ -246,51 +415,13 @@
     </div>
   </article>
 
-  <aside class="space-y-8">
+    <aside id="activity" class="space-y-8">
     <%= render "context", job_posting: @job_posting %>
 
-    <!-- Supervised application (harness) -->
-    <% harness_sessions = user_job ? user_job.guided_sessions.order(started_at: :desc) : [] %>
-    <div id="pipeline" class="bg-base-200 border border-white/5 rounded-2xl p-8 shadow-2xl scroll-mt-24">
-      <h3 class="text-xs font-bold text-base-content/50 mb-6 pb-4 border-b border-white/5">Supervised application</h3>
-
-      <% if harness_sessions.any? %>
-        <% _, state_label = harness_badge(user_job) %>
-        <div class="text-sm font-black text-white mb-1"><%= state_label || "Recorded" %></div>
-        <div class="text-xs font-bold text-slate-500 mb-5">
-          <%= pluralize(harness_sessions.size, "guided session") %> ·
-          last <%= harness_sessions.first.started_at.strftime("%b %-d, %Y") %>
-        </div>
-        <ul class="space-y-2 mb-5">
-          <% harness_sessions.first(5).each do |session| %>
-            <li>
-              <%= link_to guided_session_path(session), class: "text-xs font-bold text-primary hover:underline" do %>
-                <%= session.purpose.humanize %> · <%= session.status.humanize %>
-              <% end %>
-            </li>
-          <% end %>
-        </ul>
-        <% if @job_posting.target_url.present? %>
-          <%= button_to "Start another", start_supervised_application_job_posting_path(@job_posting),
-                        class: "w-full py-2 rounded-xl bg-white/5 text-xs font-bold hover:bg-white/10 transition-all" %>
-        <% end %>
-      <% else %>
-        <p class="text-xs text-slate-500 leading-relaxed mb-5">
-          Record a supervised lap through this employer's application flow. Advisory &mdash;
-          it never fills or submits anything, and never advances your pipeline stage on its own.
-        </p>
-        <% if @job_posting.target_url.present? %>
-          <%= button_to "Start supervised application", start_supervised_application_job_posting_path(@job_posting),
-                        class: "w-full py-2 rounded-xl bg-primary/20 text-primary border border-primary/20 text-xs font-bold hover:bg-primary hover:text-white transition-all" %>
-        <% else %>
-          <p class="text-xs text-warning italic">No application URL on this posting yet.</p>
-        <% end %>
-      <% end %>
-    </div>
-
-    <!-- Application status -->
-    <div class="bg-base-200 border border-white/5 rounded-2xl p-8 shadow-2xl">
-      <h3 class="text-xs font-bold text-base-content/50 mb-8 pb-4 border-b border-white/5"><%= t('.pipeline.heading') %></h3>
+    <!-- Admin-only posting operations -->
+    <details class="bg-base-200 border border-white/5 rounded-2xl p-8 shadow-2xl">
+      <summary class="cursor-pointer list-none text-xs font-bold text-base-content/50"><%= t('.pipeline.heading') %> <span class="ml-2 text-[10px] font-normal text-slate-600">Admin data operations</span></summary>
+      <div class="mt-8">
 
       <!-- Status Transitions -->
       <div class="flex flex-wrap items-center justify-between gap-2 mb-8">
@@ -334,7 +465,7 @@
 
       <!-- Timeline -->
       <div class="space-y-6">
-        <% @friction_reports&.each do |report| %>
+        <% @friction_reports.each do |report| %>
           <div class="relative pl-6 border-l border-rose-400/30">
             <div class="absolute -left-[5px] top-0 w-2 h-2 rounded-full bg-rose-400/70"></div>
             <time class="text-xs font-bold text-base-content/40 block" datetime="<%= report.occurred_at.iso8601 %>"><%= report.occurred_at.strftime("%b %-d, %Y · %H:%M:%S") %></time>
@@ -346,9 +477,9 @@
         <% @job_posting.pipeline_steps.order(created_at: :desc).each do |step| %>
           <div class="relative pl-6 border-l border-white/5">
             <div class="absolute -left-[5px] top-0 w-2 h-2 rounded-full bg-primary/30"></div>
-            <div class="text-xs font-bold text-base-content/40 mb-1"><%= step.created_at.strftime("%b %-d, %Y · %H:%M") %></div>
-            <div class="text-sm font-bold text-white"><%= step.status.humanize %></div>
-            <% if step.note.present? %><p class="text-xs text-base-content/60 mt-1 leading-tight"><%= step.note %></p><% end %>
+            <time class="text-xs font-bold text-base-content/40 mb-1 block" datetime="<%= step.created_at.iso8601 %>"><%= step.created_at.strftime("%b %-d, %Y · %H:%M") %></time>
+            <div class="text-sm font-bold text-white"><%= pipeline_step_title(step) %></div>
+            <p class="text-xs text-base-content/60 mt-1 leading-tight"><%= pipeline_step_summary(step, @job_posting) %></p>
 
             <% if step.artifacts.attached? %>
               <div class="flex flex-wrap gap-2 mt-3">
@@ -367,11 +498,43 @@
               </div>
             <% end %>
 
-            <% if step.link.present? %><%= link_to t('.pipeline.view_source'), step.link, class: "text-xs text-primary hover:underline mt-2 inline-block font-bold" %><% end %>
+            <% if step.link.present? %><%= link_to "Open receipt / source", step.link, target: "_blank", rel: "noopener", class: "text-xs text-primary hover:underline mt-2 inline-block font-bold" %><% end %>
+          </div>
+        <% end %>
+        <% user_job&.guided_sessions&.order(created_at: :desc)&.each do |session| %>
+          <div class="relative pl-6 border-l border-accent/20">
+            <div class="absolute -left-[5px] top-0 w-2 h-2 rounded-full bg-accent/60"></div>
+            <time class="text-xs font-bold text-base-content/40 mb-1 block" datetime="<%= session.created_at.iso8601 %>"><%= session.created_at.strftime("%b %-d, %Y · %H:%M") %></time>
+            <div class="text-sm font-bold text-white">Guided application session started</div>
+            <p class="text-xs text-base-content/60 mt-1"><%= guided_session_summary(session, @job_posting) %></p>
+            <div class="flex flex-wrap gap-3 mt-2">
+              <%= link_to guided_session_receipt_label(session), guided_session_path(session), class: "text-xs text-accent hover:underline font-bold" %>
+              <%= link_to "Open application ##{user_job.id}", user_job_posting_path(user_job), class: "text-xs text-primary hover:underline font-bold" %>
+              <% if @job_posting.company_record %>
+                <%= link_to "Open company", company_path(@job_posting.company_record), class: "text-xs text-slate-400 hover:text-white font-bold" %>
+              <% end %>
+            </div>
+            <% session.guided_session_events.order(occurred_at: :asc, id: :asc).each do |event| %>
+              <div class="mt-3 ml-2 border-l border-accent/10 pl-3">
+                <time class="text-[10px] font-bold text-base-content/40" datetime="<%= event.occurred_at.iso8601 %>"><%= event.occurred_at.strftime("%b %-d, %H:%M:%S") %></time>
+                <div class="text-xs font-bold text-white"><%= guided_event_title(event) %></div>
+                <div class="text-[10px] text-base-content/60"><%= guided_event_summary(event) %></div>
+                <% if event.page_url.present? %>
+                  <%= link_to "Open page receipt", event.page_url, target: "_blank", rel: "noopener", class: "text-[10px] text-accent hover:underline" %>
+                <% end %>
+                <% if event.page_url.present? && event.page_url != session.source_url %>
+                  <%= link_to "Open session source", session.source_url, target: "_blank", rel: "noopener", class: "text-[10px] text-slate-400 hover:text-white" %>
+                <% end %>
+                <% if event.evidence["datalake_asset_seqs"].present? %>
+                  <span class="text-[10px] text-base-content/50"> · evidence <%= event.evidence["datalake_asset_seqs"].join(", ") %></span>
+                <% end %>
+              </div>
+            <% end %>
           </div>
         <% end %>
       </div>
-    </div>
+      </div>
+    </details>
 
     <% if @job_posting.company_record %>
       <div class="card-neural p-8 border-l-4 <%= @job_posting.company_record.toxic_culture_flag ? 'border-l-rose-500 bg-rose-500/5' : 'border-l-emerald-500 bg-emerald-500/5' %> shadow-2xl">
@@ -439,21 +602,14 @@
 
     <!-- Your activity -->
     <div class="bg-base-200 border border-white/5 rounded-2xl p-8 shadow-2xl">
-      <div class="flex items-center justify-between mb-8 pb-4 border-b border-white/5">
-        <h3 class="text-xs font-bold text-base-content/50"><%= t('.activity.heading') %></h3>
+        <div class="flex items-center justify-between mb-8 pb-4 border-b border-white/5">
+          <h3 class="text-xs font-bold text-base-content/50"><%= t('.activity.heading') %></h3>
         <div class="flex items-center gap-4 flex-wrap justify-end">
           <div class="text-xs font-bold text-primary flex items-center gap-2">
             <%= heroicon "heart", variant: :solid, options: { class: "w-3 h-3" } %>
-            <% display_status = Pipeline::DisplayStatus.call(job_posting: @job_posting, user_job: user_job) %>
-            <%= t('.activity.status_label') %>: <%= display_status&.fetch(:label) { 'None' } || 'None' %>
+            <%= t('.activity.status_label') %>: <%= (user_job&.status || 'none').humanize %>
           </div>
-          <%# Every legal next transition, not just favorite -- `applied` and beyond
-              previously had no control at all, so the pipeline could never advance. %>
-          <% (user_job || UserJobPosting.new).available_status_events.each do |event| %>
-            <%= button_to t(".activity.events.#{event}"),
-                          user_job_postings_path(job_posting_id: @job_posting.id, status: event),
-                          class: "text-xs font-bold text-slate-400 hover:text-primary transition-colors" %>
-          <% end %>
+          <span class="text-xs text-slate-500">Use the control plane above to change status.</span>
         </div>
       </div>
 
@@ -513,44 +669,19 @@
         </div>
       <% end %>
 
-      <!-- AI Match Analysis -->
-      <div class="space-y-6 mb-10">
-        <div class="flex items-center justify-between">
-          <div class="text-xs font-bold text-base-content/40"><%= t('.activity.match_heading') %></div>
-          <% if current_user.career_profile&.resume_text.present? || current_user.career_profile&.work_experiences&.any? %>
-            <%= button_to t('.activity.check_match'), analyze_match_user_job_postings_path(job_posting_id: @job_posting.id), class: "text-xs font-bold text-primary hover:text-white underline" %>
-          <% else %>
-            <%= link_to t('.activity.setup_profile'), edit_career_profile_path, class: "text-xs font-bold text-slate-400 hover:text-white underline" %>
-          <% end %>
-        </div>
-
-        <div class="p-4 rounded-xl bg-white/5 border border-white/5 border-dashed">
-          <% if user_job&.match_analysis.present? %>
-            <div class="prose-invert text-xs leading-relaxed mb-6">
-              <%= markdown(user_job.match_analysis) %>
-            </div>
-            <%= button_to t('.activity.generate_pack'), generate_artifacts_user_job_postings_path(job_posting_id: @job_posting.id), class: "w-full py-2 rounded-xl bg-primary/20 text-primary border border-primary/20 text-xs font-bold hover:bg-primary hover:text-white transition-all" %>
-          <% else %>
-            <div class="text-center py-4">
-              <div class="text-xs font-bold text-slate-500 mb-1"><%= t('.activity.no_match_yet') %></div>
-              <p class="text-xs text-slate-500"><%= t('.activity.match_helper') %></p>
-            </div>
-          <% end %>
-        </div>
-      </div>
-
       <!-- Cover Letter -->
       <% if user_job&.cover_letter.present? %>
-        <div class="space-y-4 mb-10" data-controller="clipboard">
+        <div id="cover-letter-panel" class="space-y-4 mb-10" data-controller="clipboard">
           <div class="flex items-center justify-between">
             <div class="text-xs font-bold text-base-content/40"><%= t('.activity.cover_letter_heading') %></div>
             <button type="button" data-action="clipboard#copy" class="text-xs font-bold text-primary hover:text-white underline">
               <span data-clipboard-target="label"><%= t('.activity.copy') %></span>
             </button>
           </div>
-          <div class="p-4 rounded-xl bg-white/5 border border-white/5 prose-invert text-xs leading-relaxed">
+          <div class="p-4 rounded-xl bg-white/5 border border-white/5 prose prose-invert max-w-none text-xs leading-relaxed">
             <%= markdown(user_job.cover_letter) %>
           </div>
+
           <textarea data-clipboard-target="source" class="hidden" readonly><%= user_job.cover_letter %></textarea>
         </div>
       <% end %>
@@ -668,10 +799,30 @@
             <div class="text-white"><%= @job_posting.published_at&.strftime("%Y-%m-%d") || t('.details.unknown') %></div>
           </div>
           <div>
+            <div class="mb-1">Known since</div>
+            <div class="text-white"><%= @job_posting.created_at.strftime("%Y-%m-%d") %></div>
+          </div>
+          <div>
             <div class="mb-1"><%= t('.details.employment_type_label') %></div>
             <div class="text-white"><%= @job_posting.data&.[]('employment_type') || t('.details.none') %></div>
           </div>
         </div>
+
+        <details class="border-t border-white/5 pt-4">
+          <summary class="cursor-pointer list-none text-xs font-bold text-primary hover:text-white">Edit posting dates and company</summary>
+          <%= form_with model: @job_posting, url: admin_job_posting_path(@job_posting), method: :patch, class: "mt-3 flex flex-wrap items-end gap-3" do |form| %>
+            <div>
+              <%= form.label :published_at, "Employer posted date", class: "block text-[10px] font-bold text-slate-500 mb-1" %>
+              <%= form.date_field :published_at, value: @job_posting.published_at&.to_date, class: "input input-bordered input-xs bg-base-300 text-white" %>
+            </div>
+            <div>
+              <%= form.label :company_id, "Company", class: "block text-[10px] font-bold text-slate-500 mb-1" %>
+              <%= form.collection_select :company_id, Company.order(:name), :id, :name, { prompt: "Select company", include_blank: "Unknown company" }, class: "select select-bordered select-xs bg-base-300 text-white" %>
+            </div>
+            <%= form.submit "Save metadata", class: "btn btn-primary btn-xs rounded-lg font-bold" %>
+          <% end %>
+          <p class="mt-2 text-[10px] text-slate-500">Known since is ingestion history and cannot be edited here. Create a missing company from the Companies admin surface, then select it here.</p>
+        </details>
 
         <div>
           <div class="text-xs font-bold text-base-content/40 mb-3"><%= t('.details.ai_category_label') %></div>

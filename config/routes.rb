@@ -179,6 +179,7 @@
 Rails.application.routes.draw do
   resources :user_job_postings, only: %i[index create update destroy] do
     collection do
+      post :bulk_action
       post :analyze_match
       post :generate_artifacts
       post :generate_interview_prep
@@ -216,12 +217,14 @@ Rails.application.routes.draw do
       post :set_readiness
     end
   end
+  resources :application_answer_templates, only: %i[index create update]
   resources :guided_sessions, only: %i[index new create show] do
     member do
       patch :playback
       patch "events/:event_id/approval", to: "guided_sessions/events#approval", as: :approval
       patch "events/:event_id", to: "guided_sessions/events#update", as: :event
       post :complete
+      post :cancel
       post :compare
       post "findings/:finding_id/dispositions", to: "guided_sessions/dispositions#create", as: :finding_dispositions
     end
@@ -233,7 +236,15 @@ Rails.application.routes.draw do
     root to: "dashboard#index"
     post "toggle_pause" => "dashboard#toggle_pause"
     get "observability" => "observability#index"
+    get "data_quality" => "data_quality#index", as: :data_quality
+    post "data_quality/reconcile_companies" => "data_quality#reconcile_companies", as: :reconcile_companies
     get "extension_workflow" => "extension_workflow#show"
+    resources :resume_refreshes, only: %i[index create] do
+      member do
+        post :approve
+        post :reject
+      end
+    end
     resources :jobs, only: [:index] do
       collection do
         post :trigger
@@ -268,7 +279,7 @@ Rails.application.routes.draw do
       end
       resources :pipeline_steps, only: [:create]
       resources :contacts, only: %i[create destroy]
-      resources :interview_sessions, only: [:create]
+      resources :interview_sessions, only: %i[create update]
       resources :interview_tasks, only: [:create]
       resources :application_questions, only: %i[create destroy]
     end
@@ -307,15 +318,21 @@ Rails.application.routes.draw do
   get "about" => "pages#show", page: "about"
 
   root to: "home#index"
+  post "job_intakes", to: "job_intakes#create"
   get "home/index"
 
   resources :outbound_links, only: [:show]
   get "job_postings/triage", to: "job_posting_triage#show", as: :job_posting_triage
   resources :job_postings, only: %i[index show update] do
+    collection do
+      get :feed
+    end
     member do
       post :reformat
       post :apply_on_site
       post :start_supervised_application, to: "guided_sessions#create_from_posting"
+      get :application_cycle
+      post :select_persona
     end
   end
 
@@ -330,6 +347,7 @@ Rails.application.routes.draw do
   end
 
   namespace :api, defaults: { format: :json }, constraints: { format: :json } do
+    post "job_intakes", to: "job_intakes#create"
     namespace :v0 do
       get "geo" => "geo#index"
       resource :profile, only: %i[show update], controller: "profile"

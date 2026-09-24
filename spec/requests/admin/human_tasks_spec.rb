@@ -40,6 +40,19 @@ RSpec.describe "Admin::HumanTasks" do
 
       expect(assigns(:human_tasks)).to eq([older, newer])
     end
+
+    it "loads the guided session referenced by a submission approval" do
+      session = GuidedSession.create!(source_url: "https://jobs.example.com/role", provider: "example")
+      task = create(:human_task, job_posting: job_posting, user: user, kind: "submit_approval",
+                                 payload: { "guided_session_token" => session.session_token })
+
+      get admin_human_tasks_path
+
+      expect(assigns(:guided_sessions)).to include(session.session_token => session)
+      expect(response.body).to include(%(id="approve-human-task-#{task.id}"))
+      expect(response.body).to include("Approve and mark Applied")
+      expect(response.body).to include("name=\"agreement_confirmed\"")
+    end
   end
 
   describe "POST /admin/human_tasks/:id/approve" do
@@ -63,6 +76,49 @@ RSpec.describe "Admin::HumanTasks" do
       expect(task.reload).to be_approved
       expect(user.user_job_postings.find_by(job_posting: job_posting)).to be_nil
     end
+
+    it "marks the linked application applied only after human approval" do
+      application = create(:user_job_posting, user: user, job_posting: job_posting, status: "favorited")
+      task = create(:human_task, job_posting: job_posting, user: user, kind: "submit_approval",
+                                 payload: { "guided_session_token" => "receipt-token" })
+
+      post approve_admin_human_task_path(task), params: { receipt_url: "https://employer.example/confirmation/123", agreement_confirmed: "1" }
+
+      expect(task.reload).to be_approved
+      expect(application.reload.status).to eq("applied")
+      expect(application.applied_at).to be_present
+      expect(application.follow_up_at).to be_within(2.seconds).of(7.days.from_now)
+      expect(PipelineStep.order(:id).last.link).to eq("https://employer.example/confirmation/123")
+      expect(task.reload.payload["agreement_acknowledged_at"]).to be_present
+      expect(task.reload.payload["approval_confirmed_at"]).to be_present
+    end
+
+    it "preserves a manually scheduled follow-up" do
+      follow_up = 3.days.from_now
+      application = create(:user_job_posting, user: user, job_posting: job_posting, status: "favorited",
+                                              follow_up_at: follow_up)
+      task = create(:human_task, job_posting: job_posting, user: user, kind: "submit_approval")
+
+      post approve_admin_human_task_path(task), params: { receipt_url: "https://employer.example/confirmation/456", agreement_confirmed: "1" }
+
+      expect(application.reload.follow_up_at).to be_within(2.seconds).of(follow_up)
+    end
+
+    it "refuses Applied without an external receipt URL" do
+      task = create(:human_task, job_posting: job_posting, user: user, kind: "submit_approval")
+
+      post approve_admin_human_task_path(task)
+
+      expect(task.reload).to be_pending
+    end
+
+    it "refuses Applied without agreement acknowledgement" do
+      task = create(:human_task, job_posting: job_posting, user: user, kind: "submit_approval")
+
+      post approve_admin_human_task_path(task), params: { receipt_url: "https://employer.example/confirmation/789" }
+
+      expect(task.reload).to be_pending
+    end
   end
 
   describe "POST /admin/human_tasks/:id/reject" do
@@ -74,5 +130,32 @@ RSpec.describe "Admin::HumanTasks" do
       expect(task.reload).to be_rejected
       expect(task.resolution_note).to eq("Wrong persona for this role.")
     end
+  end
+
+  it "carries a receipt-backed application through interview preparation" do
+    application = create(:user_job_posting, user: user, job_posting: job_posting, status: "favorited")
+    session = create(:guided_session, user_job_posting: application, status: "completed")
+    task = create(:human_task, job_posting: job_posting, user: user, kind: "submit_approval",
+                               payload: { "guided_session_token" => session.session_token })
+
+    post approve_admin_human_task_path(task), params: {
+      receipt_url: "https://employer.example/confirmation/e2e", agreement_confirmed: "1"
+    }
+    expect(application.reload).to have_attributes(status: "applied", applied_at: be_present, follow_up_at: be_present)
+
+    allow_any_instance_of(UserJobPostingsController).to receive(:current_user).and_return(user)
+    post user_job_postings_path, params: { job_posting_id: job_posting.id, status: "interview" }
+    expect(application.reload.status).to eq("interview")
+
+    allow(LLM::InterviewPrepGenerator).to receive(:call) do |_, posting, **|
+      expect(posting).to eq(job_posting)
+      application.update!(interview_prep_pack: "# Prep pack", interview_prep_pack_generated_at: Time.current)
+      { success: true }
+    end
+    post generate_interview_prep_user_job_postings_path, params: { job_posting_id: job_posting.id }
+
+    expect(application.reload.interview_prep_pack).to eq("# Prep pack")
+    expect(Applications::CyclePlan.call(application)[:interview_prep]).to include(required: true, ready: true,
+                                                                                  action: nil)
   end
 end

@@ -1,5 +1,5 @@
 # bash completion for bin/wwwr -- source this from ~/.bashrc:
-#   source /path/to/wwworkremote/core/completions/wwwr.bash
+#   source /path/to/wwworkremote/wwworkremote/completions/wwwr.bash
 # Works for the command whether invoked as `wwwr` or `bin/wwwr`.
 
 _wwwr() {

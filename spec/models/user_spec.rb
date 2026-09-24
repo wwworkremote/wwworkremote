@@ -1,25 +1,32 @@
 # frozen_string_literal: true
 
-# == Schema Information
-#
-# Table name: users
-#
-#  id                  :bigint           not null, primary key
-#  email               :string           default(""), not null
-#  name                :string           not null
-#  password_digest     :string
-#  preferred_countries :text             default([]), is an Array
-#  slug                :string           not null
-#  created_at          :datetime         not null
-#  updated_at          :datetime         not null
-#
-# Indexes
-#
-#  index_users_on_email  (email) UNIQUE
-#  index_users_on_slug   (slug) UNIQUE
-#
 require "rails_helper"
 
+
+# ## Schema Information
+#
+# Table name: `users`
+#
+# ### Columns
+#
+# Name                       | Type               | Attributes
+# -------------------------- | ------------------ | ---------------------------
+# **`id`**                   | `bigint`           | `not null, primary key`
+# **`email`**                | `string`           | `default(""), not null`
+# **`name`**                 | `string`           | `not null`
+# **`password_digest`**      | `string`           |
+# **`preferred_countries`**  | `text`             | `default([]), is an Array`
+# **`slug`**                 | `string`           | `not null`
+# **`created_at`**           | `datetime`         | `not null`
+# **`updated_at`**           | `datetime`         | `not null`
+#
+# ### Indexes
+#
+# * `index_users_on_email` (_unique_):
+#     * **`email`**
+# * `index_users_on_slug` (_unique_):
+#     * **`slug`**
+#
 RSpec.describe User do
   describe "validations" do
     it { is_expected.to validate_presence_of(:email) }

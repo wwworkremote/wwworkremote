@@ -101,11 +101,28 @@ en:
       subtitle: "Your job search, aggregated and AI-matched."
       edit_profile: "Edit Profile"
       data_sources_cta: "Data Sources"
+      today:
+        eyebrow: "Today"
+        title: "Move Forward"
+        triage: "untriaged"
+        review: "to review"
+        applications: "applications"
+        follow_up: "follow ups"
+      shortcuts:
+        browse_jobs: "Browse Jobs"
+        saved_jobs: "Saved Jobs"
+        operations: "Operations"
+      search:
+        heading: "Search job postings"
+        placeholder: "Search titles, companies, skills..."
+        submit: "Search"
+        helper: "Press / to focus search from anywhere"
       funnel_health:
         since_last_application: "Since Last Application"
         untriaged: "Untriaged"
         oldest_untriaged: "Oldest Untriaged"
         never: "Never"
+        open_triage: "Open Triage"
       interviews:
         heading: "Interviews"
         open_prep: "Open Prep Pack"

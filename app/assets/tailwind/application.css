@@ -12,17 +12,17 @@
      muted comment color, and both relightened slates) failed as low as
      2.86:1 against base-300. See app CHANGELOG/commit history for the
      computed ratios. */
-  --color-graphite-bg: #1a1c1f;
-  --color-graphite-bg-dark: #131416;
-  --color-graphite-bg-light: #2a2d31;
-  --color-graphite-fg: #e8e9ea;
+  --color-graphite-bg: #111827;
+  --color-graphite-bg-dark: #0b1220;
+  --color-graphite-bg-light: #1f2937;
+  --color-graphite-fg: #f8f8f2;
 
-  --color-graphite-blue: #6292f0;       /* primary */
-  --color-graphite-slate-blue: #8a94a5; /* secondary */
-  --color-graphite-sky: #6fa8f0;        /* accent / info */
-  --color-graphite-green: #4caf6e;      /* success */
-  --color-graphite-amber: #d9a441;      /* warning */
-  --color-graphite-coral: #e5715d;      /* error */
+  --color-graphite-blue: #9580ff;       /* primary / action */
+  --color-graphite-slate-blue: #b7c0d1; /* secondary / readable muted */
+  --color-graphite-sky: #80ffea;        /* accent / info */
+  --color-graphite-green: #8aff80;      /* success */
+  --color-graphite-amber: #ffff80;      /* warning */
+  --color-graphite-coral: #ff9580;      /* error */
 
   /* Structural components (bg-slate-800/900/950) grounded to the same
      darkness family as base-100/200, one step darker for slate-950. */
@@ -38,7 +38,7 @@
   --color-slate-600: #8895a4; /* 4.53:1 vs base-300 (was failing at 2.86:1) */
   --color-slate-500: #9aa8b8; /* 5.71:1 vs base-300 */
 
-  --font-inter: 'Inter', system-ui, -apple-system, sans-serif;
+  --font-inter: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
 }
 
 @layer base {
@@ -68,6 +68,10 @@
     @apply font-inter bg-base-100 text-base-content antialiased min-h-screen text-[15px] font-medium;
     -webkit-font-smoothing: subpixel-antialiased;
     letter-spacing: -0.01em;
+  }
+
+  :focus-visible {
+    @apply outline outline-2 outline-offset-2 outline-accent;
   }
 
   h1, h2, h3, h4, h5, h6 {

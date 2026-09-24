@@ -3,7 +3,8 @@
 class Resume::ProfileEmbedder
   # See JobBoards::Embedder -- embeddings live on a separate llama-server
   # instance from the chat model (OLLAMA_API_BASE), not the same one.
-  API_URL = "#{ENV.fetch('OLLAMA_EMBED_API_BASE', 'http://localhost:11501/v1')}/embeddings".freeze
+  API_URL = "#{ENV['LLAMACPP_EMBED_API_BASE'] || ENV['OLLAMA_EMBED_API_BASE'] || 'http://localhost:11501/v1'}/embeddings".freeze
+
 
   def initialize(career_profile)
     @career_profile = career_profile

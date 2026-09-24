@@ -56,14 +56,15 @@
       They're expected to differ for anything you've favorited/applied to --
       that's not drift, it's the point of the split. %>
   <div class="mb-6">
-    <div class="text-xs font-bold text-base-content/40 mb-2">Pipeline state</div>
+    <div class="text-xs font-bold text-base-content/40 mb-1">State ownership</div>
+    <p class="mb-3 text-[10px] leading-relaxed text-slate-500">Your pipeline is what you do. Posting lifecycle is what the source/system knows. Crawl and enrichment are data operations.</p>
     <dl class="space-y-1 text-xs font-bold">
       <div class="flex justify-between gap-4">
-        <dt class="text-base-content/50">posting</dt>
+        <dt class="text-base-content/50">posting lifecycle</dt>
         <dd class="text-white font-mono"><%= job_posting.status %></dd>
       </div>
       <div class="flex justify-between gap-4">
-        <dt class="text-base-content/50">yours</dt>
+        <dt class="text-base-content/50">your pipeline</dt>
         <dd class="font-mono <%= tracked.nil? ? "text-base-content/30" : "text-white" %>">
           <%= tracked&.status || "untracked" %>
         </dd>
@@ -81,11 +82,11 @@
         </div>
       <% end %>
       <div class="flex justify-between gap-4">
-        <dt class="text-base-content/50">crawl</dt>
+        <dt class="text-base-content/50">source crawl</dt>
         <dd class="text-white font-mono"><%= job_posting.crawl_status.presence || "—" %></dd>
       </div>
       <div class="flex justify-between gap-4">
-        <dt class="text-base-content/50">enriched</dt>
+        <dt class="text-base-content/50">data enrichment</dt>
         <dd class="font-mono <%= job_posting.enriched_at ? "text-white" : "text-base-content/30" %>">
           <%= job_posting.enriched_at&.strftime("%Y-%m-%d") || "never" %>
         </dd>

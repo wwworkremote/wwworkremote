@@ -8,19 +8,30 @@ class UserJobPostingsController < ApplicationController
   # regardless of direction. Falling back to created_at sorts them by when we
   # learned of them, which is the honest approximation.
   SORTS = {
-    "newest" => Arel.sql("COALESCE(applied_at, created_at) DESC"),
-    "oldest" => Arel.sql("COALESCE(applied_at, created_at) ASC")
+    "newest" => Arel.sql("COALESCE(user_job_postings.applied_at, user_job_postings.created_at) DESC"),
+    "oldest" => Arel.sql("COALESCE(user_job_postings.applied_at, user_job_postings.created_at) ASC")
   }.freeze
 
   # The overview intentionally materializes one ordered collection so its
   # columns and summary cards agree on the same funnel snapshot.
   # rubocop:disable-next Metrics/AbcSize
   def index
-    scoped = sorted_tracked_postings
+    @query = params[:q].to_s.strip.presence
+    @status_filter = if %w[all favorited applied interview idle due
+                           outcomes].include?(params[:status])
+                       params[:status]
+                     else
+                       "all"
+                     end
+    @sort = SORTS.key?(params[:sort]) ? params[:sort] : "newest"
+    @view = %w[list board].include?(params[:view]) ? params[:view] : "list"
+    scoped = filtered_tracked_postings
     @tracked = scoped.to_a
     @funnel_stats = funnel_stats(@tracked)
     @favorites = @tracked.select { |record| record.status == "favorited" }
     @applied = @tracked.select { |record| record.status == "applied" }
+    @lanes = { "none" => "Unsorted", "favorited" => "Saved", "applied" => "Applied", "interview" => "Interview",
+               "skipped" => "Skipped", "archived" => "Archived" }
   end
 
   def create
@@ -41,6 +52,19 @@ class UserJobPostingsController < ApplicationController
     @user_job_posting = current_user.user_job_postings.find(params.expect(:id))
     @user_job_posting.destroy
     redirect_back_or_to(user_job_postings_path, notice: "Job removed from your list.")
+  end
+
+  def bulk_action
+    ids = Array(params[:user_job_posting_ids]).map(&:to_i)
+    event = params[:bulk_operation].to_s
+    unless %w[apply interview archive].include?(event)
+      return redirect_back_or_to(user_job_postings_path, alert: "Choose a valid pipeline action.")
+    end
+
+    updated = current_user.user_job_postings.includes(:job_posting).where(id: ids).count { |posting|
+      posting.record_status_event!(event)
+    }
+    redirect_back_or_to(user_job_postings_path, notice: "#{updated} pipeline records updated.")
   end
 
   # Thin POST-and-redirect wrappers over an LLM service -- see #run_llm.
@@ -101,7 +125,29 @@ class UserJobPostingsController < ApplicationController
   end
 
   def sorted_tracked_postings
-    current_user.user_job_postings.includes(:job_posting, :application_field_answers).order(SORTS.fetch(sort_key))
+    current_user.user_job_postings.includes(:job_posting, :application_field_answers).order(SORTS.fetch(@sort))
+  end
+
+  # Search and status filters intentionally compose on one relation so the
+  # funnel summary and rendered rows cannot disagree.
+  # rubocop:disable-next-line Metrics/AbcSize, Metrics/MethodLength
+  def filtered_tracked_postings
+    scope = sorted_tracked_postings
+    if @query
+      pattern = "%#{ActiveRecord::Base.sanitize_sql_like(@query)}%"
+      scope = scope.joins(:job_posting).where(
+        "job_postings.title ILIKE :pattern OR job_postings.company_name ILIKE :pattern", pattern: pattern
+      )
+    end
+    case @status_filter
+    when "favorited" then scope = scope.where(status: "favorited")
+    when "applied" then scope = scope.where(status: %w[applied interview])
+    when "interview" then scope = scope.where(status: "interview")
+    when "idle" then scope = scope.merge(UserJobPosting.idle)
+    when "due" then scope = scope.where(user_job_postings: { follow_up_at: ..Time.current })
+    when "outcomes" then scope = scope.where.not(outcome: nil)
+    end
+    scope
   end
 
   # rubocop:disable-next Metrics/AbcSize
@@ -110,10 +156,6 @@ class UserJobPostingsController < ApplicationController
       personas: records.count { |record| record.resume_persona_id.present? },
       answers: records.sum { |record| record.application_field_answers.length },
       outcomes: records.count { |record| record.outcome.present? } }
-  end
-
-  def sort_key
-    @sort = SORTS.key?(params[:sort]) ? params[:sort] : "newest"
   end
 
   def set_job_posting
@@ -157,7 +199,7 @@ class UserJobPostingsController < ApplicationController
   # real outcome goes through apply_manual_outcome's fixed vocabulary in
   # #create, not through arbitrary values on this action.
   def user_job_posting_params
-    permitted = params.expect(user_job_posting: [:notes, :interview_prep_pack, *CLEARABLE_OUTCOME_ATTRS])
+    permitted = params.expect(user_job_posting: [:notes, :interview_prep_pack, :follow_up_at, *CLEARABLE_OUTCOME_ATTRS])
     permitted[:outcome].present? ? permitted.except(*CLEARABLE_OUTCOME_ATTRS) : permitted
   end
 end

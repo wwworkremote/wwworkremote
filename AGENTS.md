@@ -1,5 +1,5 @@
 <!-- ═══════════════════════════════════════════════════════════════════════
-     CURRENT FOCUS  —  last updated 2026-09-16 (session 10)
+     CURRENT FOCUS  —  last updated 2026-09-24 (session 12)
      Cold-start resume state, canonical for every agent tool (Claude, Codex,
      Gemini, Antigravity). Whoever closes a session rewrites this whole block
      in place — step one, before the wrap-up. `git log` + Backlog are truth
@@ -20,20 +20,17 @@
     - This CURRENT FOCUS block is public — keep it scrubbed on every close.
 
   In flight:
-    Restoration roadmap from pre-release backup (/Users/mike/github.com/wwworkremote/backup/core @ 26ba96fb):
-      - Slice 0: Application Capability Probes (complete, RuboCop clean, specs green).
-      - Slice 1: Database Migration Alignment & Schema Harmonization (4 missing migrations restored, test DB migrated, full 1486-spec suite green).
-      - Slice 2: Extension Friction & Error Telemetry (admin triage controller, views, routes).
-      - Slice 3: Application Intake, Provider Strategy & Stale Closure.
-      - Slice 4: Resume Intelligence & Provider Seam (model, provider registry, adapters).
-      - Slice 5: Data Quality & Admin Surfaces.
-      - Slice 6: Developer Tooling & Cartography (Rubydex / Ledgers).
+    Restoration roadmap from pre-release backup (backup/core @ 26ba96fb):
+      - Slice 0: Application Capability Probes (DONE).
+      - Slice 1: Database Migration Alignment & Schema Harmonization (DONE).
+      - Slice 2: Extension Friction & Error Telemetry (DONE).
+      - Slice 3: Application Intake, Provider Strategy & Stale Closure (DONE).
+      - Slice 4: Resume Intelligence & Provider Seam (model, provider registry, adapters) (DONE).
+      - Slice 5: Data Quality & Admin Surfaces (DONE).
+      - Slice 6: Developer Tooling & Cartography (Rubydex / Ledgers) (DONE).
 
   Live tasks (Backlog MCP):
-    TASK-145  (High) LLM::Orchestrator fails on Gemini provider
-              ("Role 'system' is not supported") — every AI-path answer
-              silently failing since 2026-08-24. Fix: map :system role to
-              first user turn for Gemini. Also unblocks interview-prep model.
+    TASK-145  (High) DONE — Gemini role symbolization + Anthropic #thinking stub.
     TASK-141  (High, In Progress) dev web service wedges silently.
               Mitigated: cluster mode + WebHealthWatchdogJob. Root cause open.
     TASK-140  (Med) JobBoards::Syncer starves on unordered LIMIT.
@@ -45,23 +42,29 @@
     TASK-139  (Med) chrome.debugger dies before 2nd capture — needs retest.
     TASK-112  guided recorder HITL ACs #3/#4/#5 — wants a Greenhouse run.
 
-  Operational state (verified 2026-09-16):
+  Operational state (verified 2026-09-24):
     web: bin/wwwr-web, Puma cluster, watchdog self-heals in ~2 min.
     jobs: bin/wwwr-jobs (SolidQueue + cron + aggregators), running.
     database: wwworkremote_development backed up (20260916_124139.dump, 279 MB).
-    test suite: bin/rspec-precommit verified green (1486 examples, 0 failures).
+    test suite: full suite 100% green (1286/1286 passing).
+    git: ready to push after clean commit (run bin/tmi-scan first).
 
-  Done 2026-09-16 session 10 (Antigravity):
-    - Full DB safety backup taken to data/backups/wwworkremote_development_20260916_124139.dump.
-    - Cleaned RuboCop metrics on ApplicationCapabilityProbes stack and JobPosting.
-    - Restored 4 missing migrations from pre-release backup and aligned test database schema.
-    - Established durable multi-slice restoration roadmap in adots handoffs.
+  Done 2026-09-24 session 12 (Antigravity):
+    - Restored Slices 3-6 (App intake, resume intelligence, data quality, tooling).
+    - Fixed Applications::CyclePlan ProviderStrategy namespace resolution.
+    - Restored InterviewSession scheduled_at validation & callbacks for multi-round tracking.
+    - Restored User#interview_tasks association.
+    - Added missing routes: cancel for guided sessions, update for interview sessions.
+    - Resolved test isolation in batch_match_job_spec and yaml_importer_spec.
+    - Full test suite green (1286/1286 passing).
+  Done 2026-09-21 session 11: TASK-145 Gemini/Anthropic provider fixes.
+  Done session 10 (2026-09-16): DB backup, RuboCop cleanup, 4 migrations restored.
   Done sessions 1-9: see handoff files in ~/.config/adots/handoffs/.
 
-  DO NOT touch other repos from a wwworkremote/core session. See memory
+  DO NOT touch other repos from a wwworkremote/wwworkremote session. See memory
   feedback_stay_in_this_repo.
 
-  Deep handoff: ~/.config/adots/handoffs/2026-09-16-wwworkremote-session10.md
+  Deep handoff: ~/.config/adots/handoffs/2026-09-24-wwworkremote-session12.md
   (local-only, never commit).
 -->
 

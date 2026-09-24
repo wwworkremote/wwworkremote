@@ -95,12 +95,20 @@ class LLM::ProfileMatcher
     apply_result(result, user_job)
   end
 
+  # rubocop:disable-next Metrics/MethodLength
   def apply_result(result, user_job)
     score = extract_score(result[:output])
     tags = extract_tags(result[:output])
-    user_job.update!(match_analysis: result[:output], match_score: score, match_tags: tags,
+    analysis = clean_output(result[:output])
+    user_job.update!(match_analysis: analysis, match_score: score, match_tags: tags,
                      priority_flag: score >= 80)
-    { success: true, output: result[:output], score: score, tags: tags }
+    { success: true, output: analysis, score: score, tags: tags }
+  end
+
+  def clean_output(output)
+    text = output.to_s
+    m = text.strip.match(/\A```(?:markdown)?\s*\n(?<body>.*)\n\s*```\s*\z/m)
+    m ? m[:body].strip : text
   end
 
   # Try to extract numerical score (e.g. 85%)

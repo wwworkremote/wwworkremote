@@ -1,31 +1,40 @@
 # frozen_string_literal: true
 
-# == Schema Information
+# ## Schema Information
 #
-# Table name: models
+# Table name: `models`
 #
-#  id                :bigint           not null, primary key
-#  capabilities      :jsonb
-#  context_window    :integer
-#  family            :string
-#  knowledge_cutoff  :date
-#  max_output_tokens :integer
-#  metadata          :jsonb
-#  modalities        :jsonb
-#  model_created_at  :datetime
-#  name              :string           not null
-#  pricing           :jsonb
-#  provider          :string           not null
-#  created_at        :datetime         not null
-#  updated_at        :datetime         not null
-#  model_id          :string           not null
+# ### Columns
 #
-# Indexes
+# Name                     | Type               | Attributes
+# ------------------------ | ------------------ | ---------------------------
+# **`id`**                 | `bigint`           | `not null, primary key`
+# **`capabilities`**       | `jsonb`            |
+# **`context_window`**     | `integer`          |
+# **`family`**             | `string`           |
+# **`knowledge_cutoff`**   | `date`             |
+# **`max_output_tokens`**  | `integer`          |
+# **`metadata`**           | `jsonb`            |
+# **`modalities`**         | `jsonb`            |
+# **`model_created_at`**   | `datetime`         |
+# **`name`**               | `string`           | `not null`
+# **`pricing`**            | `jsonb`            |
+# **`provider`**           | `string`           | `not null`
+# **`created_at`**         | `datetime`         | `not null`
+# **`updated_at`**         | `datetime`         | `not null`
+# **`model_id`**           | `string`           | `not null`
 #
-#  index_models_on_capabilities           (capabilities) USING gin
-#  index_models_on_family                 (family)
-#  index_models_on_modalities             (modalities) USING gin
-#  index_models_on_provider_and_model_id  (provider,model_id) UNIQUE
+# ### Indexes
+#
+# * `index_models_on_capabilities` (_using_ gin):
+#     * **`capabilities`**
+# * `index_models_on_family`:
+#     * **`family`**
+# * `index_models_on_modalities` (_using_ gin):
+#     * **`modalities`**
+# * `index_models_on_provider_and_model_id` (_unique_):
+#     * **`provider`**
+#     * **`model_id`**
 #
 class Model < ApplicationRecord
   include ::RubyLLM::ActiveRecord::ActsAs

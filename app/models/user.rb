@@ -1,22 +1,28 @@
 # frozen_string_literal: true
 
-# == Schema Information
+# ## Schema Information
 #
-# Table name: users
+# Table name: `users`
 #
-#  id                  :bigint           not null, primary key
-#  email               :string           default(""), not null
-#  name                :string           not null
-#  password_digest     :string
-#  preferred_countries :text             default([]), is an Array
-#  slug                :string           not null
-#  created_at          :datetime         not null
-#  updated_at          :datetime         not null
+# ### Columns
 #
-# Indexes
+# Name                       | Type               | Attributes
+# -------------------------- | ------------------ | ---------------------------
+# **`id`**                   | `bigint`           | `not null, primary key`
+# **`email`**                | `string`           | `default(""), not null`
+# **`name`**                 | `string`           | `not null`
+# **`password_digest`**      | `string`           |
+# **`preferred_countries`**  | `text`             | `default([]), is an Array`
+# **`slug`**                 | `string`           | `not null`
+# **`created_at`**           | `datetime`         | `not null`
+# **`updated_at`**           | `datetime`         | `not null`
 #
-#  index_users_on_email  (email) UNIQUE
-#  index_users_on_slug   (slug) UNIQUE
+# ### Indexes
+#
+# * `index_users_on_email` (_unique_):
+#     * **`email`**
+# * `index_users_on_slug` (_unique_):
+#     * **`slug`**
 #
 class User < ApplicationRecord
   has_secure_password
@@ -27,13 +33,14 @@ class User < ApplicationRecord
   has_many :user_job_postings, dependent: :destroy
   has_many :job_postings, through: :user_job_postings
   has_many :pipeline_steps, dependent: :destroy
-  has_many :interview_sessions, dependent: :destroy
-  has_many :interview_tasks, dependent: :destroy
   has_many :human_tasks, dependent: :destroy
   has_many :contacts, dependent: :destroy
   has_many :company_pipeline_steps, dependent: :destroy
   has_many :application_questions, dependent: :destroy
   has_many :application_answer_templates, dependent: :destroy
+  has_many :interview_sessions, dependent: :destroy
+  has_many :interview_tasks, dependent: :destroy
+  has_many :resume_refreshes, dependent: :destroy
 
   validates :email, presence: true, uniqueness: { case_sensitive: false }
   validates :name, presence: true

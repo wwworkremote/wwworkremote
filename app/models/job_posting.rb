@@ -1,5 +1,83 @@
 # frozen_string_literal: true
 
+# rubocop:disable-next Metrics/ClassLength
+# ## Schema Information
+#
+# Table name: `job_postings`
+#
+# ### Columns
+#
+# Name                      | Type               | Attributes
+# ------------------------- | ------------------ | ---------------------------
+# **`id`**                  | `bigint`           | `not null, primary key`
+# **`body`**                | `string`           |
+# **`company_name`**        | `string`           |
+# **`country_code`**        | `string`           |
+# **`crawl_status`**        | `string`           |
+# **`data`**                | `jsonb`            | `not null`
+# **`embedding`**           | `vector(768)`      |
+# **`enriched_at`**         | `datetime`         |
+# **`latitude`**            | `float`            |
+# **`location`**            | `string`           |
+# **`longitude`**           | `float`            |
+# **`published_at`**        | `datetime`         |
+# **`seen_count`**          | `integer`          | `default(1), not null`
+# **`signature`**           | `string`           | `not null`
+# **`status`**              | `string`           |
+# **`tags`**                | `string`           | `is an Array`
+# **`target_url`**          | `string`           |
+# **`title`**               | `string`           |
+# **`tsv_search`**          | `tsvector`         |
+# **`created_at`**          | `datetime`         | `not null`
+# **`updated_at`**          | `datetime`         | `not null`
+# **`company_id`**          | `bigint`           |
+# **`external_author_id`**  | `string`           |
+# **`external_id`**         | `string`           |
+# **`source_id`**           | `bigint`           |
+#
+# ### Indexes
+#
+# * `index_job_postings_on_body` (_using_ gin):
+#     * **`body`**
+# * `index_job_postings_on_company_and_published_at`:
+#     * **`company`**
+#     * **`published_at DESC`**
+# * `index_job_postings_on_company_id`:
+#     * **`company_id`**
+# * `index_job_postings_on_company_name`:
+#     * **`company_name`**
+# * `index_job_postings_on_company_name_and_published_at`:
+#     * **`company_name`**
+#     * **`published_at DESC`**
+# * `index_job_postings_on_country_code`:
+#     * **`country_code`**
+# * `index_job_postings_on_data` (_using_ gin):
+#     * **`data`**
+# * `index_job_postings_on_embedding_hnsw` (_using_ hnsw):
+#     * **`((embedding)::halfvec(768)) halfvec_cosine_ops`**
+# * `index_job_postings_on_external_id`:
+#     * **`external_id`**
+# * `index_job_postings_on_location`:
+#     * **`location`**
+# * `index_job_postings_on_published_at`:
+#     * **`published_at`**
+# * `index_job_postings_on_signature` (_unique_):
+#     * **`signature`**
+# * `index_job_postings_on_source_id_and_published_at`:
+#     * **`source_id`**
+#     * **`published_at DESC`**
+# * `index_job_postings_on_title` (_using_ gin):
+#     * **`title`**
+# * `index_job_postings_on_tsv_search` (_using_ gin):
+#     * **`tsv_search`**
+#
+# ### Foreign Keys
+#
+# * `fk_rails_...`:
+#     * **`company_id => companies.id`**
+# * `fk_rails_...`:
+#     * **`source_id => sources.id`**
+#
 class JobPosting < ApplicationRecord
   include PgSearch::Model
   include JobPosting::LegacyCompanyAccess
@@ -7,7 +85,6 @@ class JobPosting < ApplicationRecord
   include JobPosting::Geocoding
   include JobPosting::LocationFiltering
   include JobPosting::GeoFiltering
-  include JobPosting::InlineEditing
 
   validates :signature, presence: true, uniqueness: true
 
@@ -24,14 +101,16 @@ class JobPosting < ApplicationRecord
   has_many :users, through: :user_job_postings
   has_many :pipeline_steps, dependent: :destroy
   has_many :human_tasks, dependent: :destroy
+  has_many :application_capability_probes, dependent: :destroy
   has_many :contacts, dependent: :destroy
   has_many :interview_sessions, dependent: :destroy
   has_many :interview_tasks, dependent: :destroy
   has_many :application_questions, dependent: :destroy
-  has_many :application_capability_probes, dependent: :destroy
   has_many :leads, dependent: :nullify
 
-  def reformatting? = data["reformatting"] == true
+  def reformatting?
+    data["reformatting"] == true
+  end
 
   scope :recent, -> { order(Arel.sql("published_at DESC NULLS LAST")) }
   scope :by_company, -> { order(Arel.sql("company_name ASC NULLS LAST")) }
@@ -44,6 +123,16 @@ class JobPosting < ApplicationRecord
     where(aliases.map { "title ILIKE ?" }.join(" OR "), *aliases.map { |a| "%#{a}%" })
   end
 
+  USER_PIPELINE_SELECT = [
+    "job_postings.*",
+    "user_job_postings.id AS user_job_posting_id",
+    "user_job_postings.status AS current_user_status",
+    "user_job_postings.outcome AS current_user_outcome",
+    "user_job_postings.priority_flag AS current_priority_flag",
+    "user_job_postings.match_score AS current_match_score",
+    "user_job_postings.match_tags AS current_match_tags"
+  ].join(", ").freeze
+
   # Postings this user hasn't run a ProfileMatcher check on yet have no
   # user_job_postings row at all -- LEFT JOIN (not INNER) keeps them in the
   # list, just sorted last (NULLS LAST) rather than dropped. The user_id
@@ -53,11 +142,16 @@ class JobPosting < ApplicationRecord
   # then rejects it since it matches neither user.id nor NULL), instead of
   # correctly showing it unscored. Selects the joined score/tags as virtual
   # attributes so the index can display them without an N+1 per card.
+  # Joins user_job_postings for user to expose pipeline status, outcome, score,
+  # and tags as virtual attributes without an N+1 per card.
+  def self.with_user_pipeline(user)
+    return all unless user
+
+    joins(match_score_join_sql(user)).select(USER_PIPELINE_SELECT)
+  end
+
   def self.by_match_score(user)
-    joins(match_score_join_sql(user))
-      .select("job_postings.*, user_job_postings.match_score AS current_match_score, " \
-              "user_job_postings.match_tags AS current_match_tags")
-      .order(Arel.sql("user_job_postings.match_score DESC NULLS LAST"))
+    with_user_pipeline(user).order(Arel.sql("user_job_postings.match_score DESC NULLS LAST"))
   end
 
   def self.match_score_join_sql(user)
@@ -146,57 +240,3 @@ class JobPosting < ApplicationRecord
                                             locals: { job_posting: self }
   end
 end
-
-# == Schema Information
-#
-# Table name: job_postings
-#
-#  id                 :bigint           not null, primary key
-#  body               :string
-#  company_name       :string
-#  country_code       :string
-#  crawl_status       :string
-#  data               :jsonb            not null
-#  embedding          :vector(768)
-#  enriched_at        :datetime
-#  latitude           :float
-#  location           :string
-#  longitude          :float
-#  published_at       :datetime
-#  seen_count         :integer          default(1), not null
-#  signature          :string           not null
-#  status             :string
-#  tags               :string           is an Array
-#  target_url         :string
-#  title              :string
-#  tsv_search         :tsvector
-#  created_at         :datetime         not null
-#  updated_at         :datetime         not null
-#  company_id         :bigint
-#  external_author_id :string
-#  external_id        :string
-#  source_id          :bigint
-#
-# Indexes
-#
-#  index_job_postings_on_body                           (body) USING gin
-#  index_job_postings_on_company_and_published_at       (company,published_at DESC)
-#  index_job_postings_on_company_id                     (company_id)
-#  index_job_postings_on_company_name                   (company_name)
-#  index_job_postings_on_company_name_and_published_at  (company_name,published_at DESC)
-#  index_job_postings_on_country_code                   (country_code)
-#  index_job_postings_on_data                           (data) USING gin
-#  index_job_postings_on_embedding_hnsw                 (((embedding)::halfvec(768)) halfvec_cosine_ops) USING hnsw
-#  index_job_postings_on_external_id                    (external_id)
-#  index_job_postings_on_location                       (location)
-#  index_job_postings_on_published_at                   (published_at)
-#  index_job_postings_on_signature                      (signature) UNIQUE
-#  index_job_postings_on_source_id_and_published_at     (source_id,published_at DESC)
-#  index_job_postings_on_title                          (title) USING gin
-#  index_job_postings_on_tsv_search                     (tsv_search) USING gin
-#
-# Foreign Keys
-#
-#  fk_rails_...  (company_id => companies.id)
-#  fk_rails_...  (source_id => sources.id)
-#

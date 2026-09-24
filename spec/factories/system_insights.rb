@@ -1,26 +1,33 @@
 # frozen_string_literal: true
 
-# == Schema Information
+# ## Schema Information
 #
-# Table name: system_insights
+# Table name: `system_insights`
 #
-#  id          :bigint           not null, primary key
-#  active      :boolean          default(TRUE)
-#  context     :text
-#  embedding   :vector(768)
-#  file_path   :string
-#  line_number :integer
-#  message     :text
-#  severity    :integer
-#  tool        :integer
-#  created_at  :datetime         not null
-#  updated_at  :datetime         not null
+# ### Columns
 #
-# Indexes
+# Name               | Type               | Attributes
+# ------------------ | ------------------ | ---------------------------
+# **`id`**           | `bigint`           | `not null, primary key`
+# **`active`**       | `boolean`          | `default(TRUE)`
+# **`context`**      | `text`             |
+# **`embedding`**    | `vector(768)`      |
+# **`file_path`**    | `string`           |
+# **`line_number`**  | `integer`          |
+# **`message`**      | `text`             |
+# **`severity`**     | `integer`          |
+# **`tool`**         | `integer`          |
+# **`created_at`**   | `datetime`         | `not null`
+# **`updated_at`**   | `datetime`         | `not null`
 #
-#  index_system_insights_on_active          (active)
-#  index_system_insights_on_embedding_hnsw  (((embedding)::halfvec(768)) halfvec_cosine_ops) USING hnsw
-#  index_system_insights_on_file_path       (file_path)
+# ### Indexes
+#
+# * `index_system_insights_on_active`:
+#     * **`active`**
+# * `index_system_insights_on_embedding_hnsw` (_using_ hnsw):
+#     * **`((embedding)::halfvec(768)) halfvec_cosine_ops`**
+# * `index_system_insights_on_file_path`:
+#     * **`file_path`**
 #
 FactoryBot.define do
   factory :system_insight do

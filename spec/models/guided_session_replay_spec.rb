@@ -2,29 +2,37 @@
 
 require "rails_helper"
 
-# == Schema Information
+# ## Schema Information
 #
-# Table name: guided_session_replays
+# Table name: `guided_session_replays`
 #
-#  id                :bigint           not null, primary key
-#  allow_real_site   :boolean          default(FALSE), not null
-#  current_step      :integer          default(0), not null
-#  ended_at          :datetime
-#  ended_reason      :string
-#  started_at        :datetime         not null
-#  status            :string           default("running"), not null
-#  created_at        :datetime         not null
-#  updated_at        :datetime         not null
-#  guided_session_id :bigint           not null
+# ### Columns
 #
-# Indexes
+# Name                     | Type               | Attributes
+# ------------------------ | ------------------ | ---------------------------
+# **`id`**                 | `bigint`           | `not null, primary key`
+# **`allow_real_site`**    | `boolean`          | `default(FALSE), not null`
+# **`current_step`**       | `integer`          | `default(0), not null`
+# **`ended_at`**           | `datetime`         |
+# **`ended_reason`**       | `string`           |
+# **`started_at`**         | `datetime`         | `not null`
+# **`status`**             | `string`           | `default("running"), not null`
+# **`created_at`**         | `datetime`         | `not null`
+# **`updated_at`**         | `datetime`         | `not null`
+# **`guided_session_id`**  | `bigint`           | `not null`
 #
-#  index_guided_session_replays_on_guided_session_id             (guided_session_id)
-#  index_guided_session_replays_on_guided_session_id_and_status  (guided_session_id,status)
+# ### Indexes
 #
-# Foreign Keys
+# * `index_guided_session_replays_on_guided_session_id`:
+#     * **`guided_session_id`**
+# * `index_guided_session_replays_on_guided_session_id_and_status`:
+#     * **`guided_session_id`**
+#     * **`status`**
 #
-#  fk_rails_...  (guided_session_id => guided_sessions.id)
+# ### Foreign Keys
+#
+# * `fk_rails_...`:
+#     * **`guided_session_id => guided_sessions.id`**
 #
 RSpec.describe GuidedSessionReplay do
   let(:session) do

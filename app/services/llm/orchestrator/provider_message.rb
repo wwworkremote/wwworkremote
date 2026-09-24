@@ -16,11 +16,21 @@
 # .signature) if that changes.
 LLM::Orchestrator::ProviderMessage =
   Struct.new(:role, :content, :tool_calls, :tool_call_id, :thinking_text, :thinking_signature) do
+    def initialize(role, *rest)
+      super(role&.to_sym, *rest)
+    end
+
     def tool_call?
       tool_calls.present?
     end
 
     def tool_result?
       tool_call_id.present?
+    end
+
+    def thinking
+      return nil if thinking_text.blank?
+
+      RubyLLM::Thinking.build(text: thinking_text, signature: thinking_signature)
     end
   end

@@ -1304,7 +1304,6 @@ function resetForNextCapture() {
 function stateWithoutDiagnostics(state) {
   const copy = { ...state };
   delete copy.diagnostics;
-  delete copy.pickerResult;
   return copy;
 }
 
@@ -1314,7 +1313,6 @@ chrome.storage.onChanged.addListener((changes, area) => {
   if (!change?.newValue) return;
 
   const newState = change.newValue;
-  const oldState = change.oldValue;
 
   const oldFieldKeys = (currentState?.applicationFields || []).map(field => field.key).join('|');
   const newFieldKeys = (newState.applicationFields || []).map(field => field.key).join('|');
@@ -1368,7 +1366,7 @@ chrome.storage.onChanged.addListener((changes, area) => {
   // of any request/response cycle (the click can happen an arbitrary amount
   // of time after PICKER_START), so this has to be handled here rather than
   // as a direct message response.
-  if (newState.pickerResult && JSON.stringify(newState.pickerResult) !== JSON.stringify(oldState?.pickerResult)) {
+  if (newState.pickerResult) {
     handlePickerResult(newState.pickerResult);
     return;
   }
@@ -1575,15 +1573,9 @@ function startTeaching(dataKey, btn) {
 }
 
 function clearPickerResult() {
-  return new Promise((resolve) => {
-    chrome.storage.session.get(SESSION_KEY, (data) => {
-      const state = data?.[SESSION_KEY];
-      if (state) {
-        chrome.storage.session.set({ [SESSION_KEY]: { ...state, pickerResult: null } }, resolve);
-      } else {
-        resolve();
-      }
-    });
+  chrome.storage.session.get(SESSION_KEY, (data) => {
+    const state = data?.[SESSION_KEY];
+    if (state) chrome.storage.session.set({ [SESSION_KEY]: { ...state, pickerResult: null } });
   });
 }
 
@@ -1650,42 +1642,36 @@ async function saveApplicationMapping(row, result, descriptor) {
   setStatus(`${fieldLabel} mapped to ${semanticKey}`, 'var(--green)');
 }
 
-let isHandlingPickerResult = false;
-
 async function handlePickerResult(result) {
-  if (isHandlingPickerResult) return;
-  isHandlingPickerResult = true;
-  await clearPickerResult();
-
-  try {
-    if (result.mapping) {
-      const btn = document.querySelector(`.app-field-row[data-field-key="${CSS.escape(result.fieldName)}"] .app-map-btn`);
-      if (btn) { btn.disabled = false; btn.textContent = 'Map'; }
-      if (result.cancelled) {
-        setStatus('Mapping cancelled', 'var(--comment)');
-        return;
-      }
-      renderApplicationMappingDraft(result);
-      setStatus('Review the semantic source, then save the mapping', 'var(--purple)');
-      return;
-    }
-    const inputId = DATA_KEY_TO_INPUT[result.fieldName];
-    const btn = inputId ? document.querySelector(`#${fieldElId(inputId)} .teach-btn`) : null;
-    if (btn) btn.disabled = false;
-
+  if (result.mapping) {
+    const btn = document.querySelector(`.app-field-row[data-field-key="${CSS.escape(result.fieldName)}"] .app-map-btn`);
+    if (btn) { btn.disabled = false; btn.textContent = 'Map'; }
     if (result.cancelled) {
-      setStatus('Teach cancelled', 'var(--comment)');
+      setStatus('Mapping cancelled', 'var(--comment)');
+      clearPickerResult();
       return;
     }
-
-    if (inputId) {
-      setVal(inputId, result.value, fieldElId(inputId), null);
-      markTaught(fieldElId(inputId));
-    }
-    await saveExtractionRule(result);
-  } finally {
-    isHandlingPickerResult = false;
+    renderApplicationMappingDraft(result);
+    setStatus('Review the semantic source, then save the mapping', 'var(--purple)');
+    clearPickerResult();
+    return;
   }
+  const inputId = DATA_KEY_TO_INPUT[result.fieldName];
+  const btn = inputId ? document.querySelector(`#${fieldElId(inputId)} .teach-btn`) : null;
+  if (btn) btn.disabled = false;
+
+  if (result.cancelled) {
+    setStatus('Teach cancelled', 'var(--comment)');
+    clearPickerResult();
+    return;
+  }
+
+  if (inputId) {
+    setVal(inputId, result.value, fieldElId(inputId), null);
+    markTaught(fieldElId(inputId));
+  }
+  await saveExtractionRule(result);
+  clearPickerResult();
 }
 
 async function saveExtractionRule(result) {

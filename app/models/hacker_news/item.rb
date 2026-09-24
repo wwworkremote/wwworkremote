@@ -1,21 +1,28 @@
 # frozen_string_literal: true
 
-# == Schema Information
+# ## Schema Information
 #
-# Table name: hacker_news_items
+# Table name: `hacker_news_items`
 #
-#  id         :integer          not null, primary key
-#  data       :jsonb
-#  schema     :integer          default(0), not null
-#  state      :integer          default(0), not null
-#  created_at :datetime         not null
-#  updated_at :datetime         not null
+# ### Columns
 #
-# Indexes
+# Name              | Type               | Attributes
+# ----------------- | ------------------ | ---------------------------
+# **`id`**          | `integer`          | `not null, primary key`
+# **`data`**        | `jsonb`            |
+# **`schema`**      | `integer`          | `default(0), not null`
+# **`state`**       | `integer`          | `default(0), not null`
+# **`created_at`**  | `datetime`         | `not null`
+# **`updated_at`**  | `datetime`         | `not null`
 #
-#  index_hacker_news_items_on_id      (id) UNIQUE
-#  index_hacker_news_items_on_schema  (schema)
-#  index_hacker_news_items_on_state   (state)
+# ### Indexes
+#
+# * `index_hacker_news_items_on_id` (_unique_):
+#     * **`id`**
+# * `index_hacker_news_items_on_schema`:
+#     * **`schema`**
+# * `index_hacker_news_items_on_state`:
+#     * **`state`**
 #
 class HackerNews::Item < ApplicationRecord
   self.primary_key = :id

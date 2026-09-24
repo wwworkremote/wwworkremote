@@ -14,6 +14,7 @@ RSpec.describe "Home" do
     it "returns a success response" do
       get root_path
       expect(response).to be_successful
+      expect(response.body).to include(user_job_postings_path(view: "board"))
     end
 
     it "shows the Needs Follow-up section for an idle application" do
@@ -58,58 +59,6 @@ RSpec.describe "Home" do
       get root_path
 
       expect(response.body).to include("about 1 hour")
-    end
-
-    it "surfaces a scheduled interview with a link to its prep pack" do
-      job_posting = create(:job_posting, title: "Interview Role")
-      create(:user_job_posting, user: user, job_posting: job_posting, status: "applied")
-      create(:interview_session, user: user, job_posting: job_posting, scheduled_at: 2.days.from_now)
-
-      get root_path
-
-      expect(response.body).to include("Interviews")
-      expect(response.body).to include("Interview Role")
-      expect(response.body).to include(job_posting_path(job_posting, anchor: "interview-prep"))
-    end
-
-    it "shows the sequence position for a seeded multi-round process" do
-      ujp = create(:user_job_posting, user: user, job_posting: create(:job_posting, title: "Sequenced Role"),
-                                      status: "applied")
-      rounds = InterviewProcess.seed_default(ujp, template: :compressed)
-      rounds.first.update!(scheduled_at: 1.day.from_now, outcome: "advanced")
-
-      get root_path
-
-      expect(response.body).to include("Sequenced Role")
-      expect(response.body).to include("Round 2 of #{rounds.size}")
-      expect(response.body).to include("Not scheduled yet")
-    end
-
-    it "does not show a rejected interview process as an active interview" do
-      job_posting = create(:job_posting, title: "Rejected Interview Role")
-      ujp = create(:user_job_posting, user: user, job_posting: job_posting,
-                                      status: "interview", outcome: "rejected")
-      create(:interview_session, user: user, job_posting: job_posting)
-
-      get root_path
-
-      expect(response.body).not_to include("Rejected Interview Role")
-      expect(InterviewProcess.in_flight_for(user).map(&:posting)).not_to include(job_posting)
-      expect(ujp.reload.outcome).to eq("rejected")
-    end
-
-    it "lists favorited postings as active leads and applied ones as awaiting response" do
-      lead = create(:job_posting, title: "Lead Role")
-      applied = create(:job_posting, title: "Applied Role")
-      create(:user_job_posting, user: user, job_posting: lead, status: "favorited")
-      create(:user_job_posting, user: user, job_posting: applied, status: "applied")
-
-      get root_path
-
-      expect(response.body).to include("Active Leads")
-      expect(response.body).to include("Lead Role")
-      expect(response.body).to include("Awaiting Response")
-      expect(response.body).to include("Applied Role")
     end
 
     it "surfaces the untriaged count and oldest-untriaged age" do

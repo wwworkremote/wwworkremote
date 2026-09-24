@@ -3,7 +3,7 @@
 require "rails_helper"
 
 RSpec.describe LLM::BatchMatchJob do
-  let!(:user) { create(:user, email: ENV.fetch("ADMIN_EMAIL", "mike@just3ws.com")) }
+  let!(:user) { User.find_by(email: ENV.fetch("ADMIN_EMAIL", "mike@just3ws.com")) || create(:user, email: ENV.fetch("ADMIN_EMAIL", "mike@just3ws.com")) }
   let!(:ruby_job) { create(:job_posting, title: "Senior Ruby Engineer") }
   let!(:other_job) { create(:job_posting, title: "Java Developer") }
 

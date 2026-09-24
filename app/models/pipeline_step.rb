@@ -1,29 +1,37 @@
 # frozen_string_literal: true
 
-# == Schema Information
+# ## Schema Information
 #
-# Table name: pipeline_steps
+# Table name: `pipeline_steps`
 #
-#  id             :bigint           not null, primary key
-#  link           :string
-#  note           :text
-#  notes          :text
-#  reason_tags    :jsonb            not null
-#  status         :string
-#  created_at     :datetime         not null
-#  updated_at     :datetime         not null
-#  job_posting_id :bigint           not null
-#  user_id        :bigint
+# ### Columns
 #
-# Indexes
+# Name                  | Type               | Attributes
+# --------------------- | ------------------ | ---------------------------
+# **`id`**              | `bigint`           | `not null, primary key`
+# **`link`**            | `string`           |
+# **`note`**            | `text`             |
+# **`notes`**           | `text`             |
+# **`reason_tags`**     | `jsonb`            | `not null`
+# **`status`**          | `string`           |
+# **`created_at`**      | `datetime`         | `not null`
+# **`updated_at`**      | `datetime`         | `not null`
+# **`job_posting_id`**  | `bigint`           | `not null`
+# **`user_id`**         | `bigint`           |
 #
-#  index_pipeline_steps_on_job_posting_id  (job_posting_id)
-#  index_pipeline_steps_on_user_id         (user_id)
+# ### Indexes
 #
-# Foreign Keys
+# * `index_pipeline_steps_on_job_posting_id`:
+#     * **`job_posting_id`**
+# * `index_pipeline_steps_on_user_id`:
+#     * **`user_id`**
 #
-#  fk_rails_...  (job_posting_id => job_postings.id)
-#  fk_rails_...  (user_id => users.id)
+# ### Foreign Keys
+#
+# * `fk_rails_...`:
+#     * **`job_posting_id => job_postings.id`**
+# * `fk_rails_...`:
+#     * **`user_id => users.id`**
 #
 class PipelineStep < ApplicationRecord
   belongs_to :job_posting

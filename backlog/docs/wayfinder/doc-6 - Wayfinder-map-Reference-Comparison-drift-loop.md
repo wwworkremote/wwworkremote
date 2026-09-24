@@ -18,7 +18,7 @@ TASK-114..TASK-119 created. Implementation proceeds afterward as ordinary backlo
 
 ## Notes
 
-Domain: `wwworkremote/core` guided-session + signature-registry subsystems. Skills consulted:
+Domain: `wwworkremote/wwworkremote` guided-session + signature-registry subsystems. Skills consulted:
 grilling, domain-modeling. This map was charted through three grilling rounds (2026-08-28); all
 decisions were resolved inline, so the map is born with no open decision tickets. Execution is
 **out of scope for the map** by explicit choice — it closes at spec-locked and hands off clean

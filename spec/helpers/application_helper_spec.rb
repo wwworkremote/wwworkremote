@@ -24,6 +24,14 @@ RSpec.describe ApplicationHelper do
       expect(html).to include("<strong>Bold</strong>")
     end
 
+    it "unwraps outer markdown code block fences before rendering" do
+      text = "```markdown\n# Staff Analysis\n**Fit**\n```"
+      html = helper.markdown(text)
+      expect(html).to include("<h1>Staff Analysis</h1>")
+      expect(html).to include("<strong>Fit</strong>")
+      expect(html).not_to include("<pre><code")
+    end
+
     it "returns empty string for nil" do
       expect(helper.markdown(nil)).to eq("")
     end

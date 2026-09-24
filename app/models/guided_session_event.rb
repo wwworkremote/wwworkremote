@@ -2,33 +2,41 @@
 
 # One meaningful transition in a GuidedSession. This deliberately records
 # intent and safety classification alongside the observable browser evidence.
-# == Schema Information
+# ## Schema Information
 #
-# Table name: guided_session_events
+# Table name: `guided_session_events`
 #
-#  id                :bigint           not null, primary key
-#  action            :string           not null
-#  approval_state    :string           not null
-#  evidence          :jsonb            not null
-#  intent            :text             not null
-#  kind              :string           not null
-#  occurred_at       :datetime         not null
-#  page_url          :string
-#  phase             :string           not null
-#  requirement       :string           not null
-#  reversibility     :string           not null
-#  created_at        :datetime         not null
-#  updated_at        :datetime         not null
-#  guided_session_id :bigint           not null
+# ### Columns
 #
-# Indexes
+# Name                     | Type               | Attributes
+# ------------------------ | ------------------ | ---------------------------
+# **`id`**                 | `bigint`           | `not null, primary key`
+# **`action`**             | `string`           | `not null`
+# **`approval_state`**     | `string`           | `not null`
+# **`evidence`**           | `jsonb`            | `not null`
+# **`intent`**             | `text`             | `not null`
+# **`kind`**               | `string`           | `not null`
+# **`occurred_at`**        | `datetime`         | `not null`
+# **`page_url`**           | `string`           |
+# **`phase`**              | `string`           | `not null`
+# **`requirement`**        | `string`           | `not null`
+# **`reversibility`**      | `string`           | `not null`
+# **`created_at`**         | `datetime`         | `not null`
+# **`updated_at`**         | `datetime`         | `not null`
+# **`guided_session_id`**  | `bigint`           | `not null`
 #
-#  idx_on_guided_session_id_occurred_at_296f9f4e6b   (guided_session_id,occurred_at)
-#  index_guided_session_events_on_guided_session_id  (guided_session_id)
+# ### Indexes
 #
-# Foreign Keys
+# * `idx_on_guided_session_id_occurred_at_296f9f4e6b`:
+#     * **`guided_session_id`**
+#     * **`occurred_at`**
+# * `index_guided_session_events_on_guided_session_id`:
+#     * **`guided_session_id`**
 #
-#  fk_rails_...  (guided_session_id => guided_sessions.id)
+# ### Foreign Keys
+#
+# * `fk_rails_...`:
+#     * **`guided_session_id => guided_sessions.id`**
 #
 class GuidedSessionEvent < ApplicationRecord
   REQUIREMENTS = %w[required optional recommended].freeze

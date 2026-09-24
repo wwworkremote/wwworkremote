@@ -3,8 +3,8 @@
 
 environment "production"
 
-app_dir = "/home/deploy/projects/wwworkremote/core/current"
-shared_dir = "/home/deploy/projects/wwworkremote/core/shared"
+app_dir = "/home/deploy/projects/wwworkremote/wwworkremote/current"
+shared_dir = "/home/deploy/projects/wwworkremote/wwworkremote/shared"
 
 bind "unix://#{shared_dir}/sockets/puma.sock"
 pidfile "#{shared_dir}/pids/puma.pid"

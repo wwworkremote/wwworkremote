@@ -25,4 +25,16 @@ RSpec.describe "Admin::InterviewSessions" do
       expect(flash[:alert]).to include("Failed to initialize session:")
     end
   end
+
+  describe "PATCH /admin/job_postings/:job_posting_id/interview_sessions/:id" do
+    it "records an interview outcome" do
+      session = job_posting.interview_sessions.create!(user: create(:user), session_type: "Technical",
+                                                       scheduled_at: 1.day.from_now)
+
+      patch admin_job_posting_interview_session_path(job_posting, session), params: { outcome: "passed" }
+
+      expect(session.reload.outcome).to eq("passed")
+      expect(response).to redirect_to(job_posting)
+    end
+  end
 end

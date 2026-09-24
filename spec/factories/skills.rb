@@ -1,21 +1,27 @@
 # frozen_string_literal: true
 
-# == Schema Information
+# ## Schema Information
 #
-# Table name: skills
+# Table name: `skills`
 #
-#  id          :bigint           not null, primary key
-#  category    :string
-#  description :text
-#  embedding   :vector(768)
-#  name        :string           not null
-#  created_at  :datetime         not null
-#  updated_at  :datetime         not null
+# ### Columns
 #
-# Indexes
+# Name               | Type               | Attributes
+# ------------------ | ------------------ | ---------------------------
+# **`id`**           | `bigint`           | `not null, primary key`
+# **`category`**     | `string`           |
+# **`description`**  | `text`             |
+# **`embedding`**    | `vector(768)`      |
+# **`name`**         | `string`           | `not null`
+# **`created_at`**   | `datetime`         | `not null`
+# **`updated_at`**   | `datetime`         | `not null`
 #
-#  index_skills_on_embedding_hnsw  (((embedding)::halfvec(768)) halfvec_cosine_ops) USING hnsw
-#  index_skills_on_name            (name) UNIQUE
+# ### Indexes
+#
+# * `index_skills_on_embedding_hnsw` (_using_ hnsw):
+#     * **`((embedding)::halfvec(768)) halfvec_cosine_ops`**
+# * `index_skills_on_name` (_unique_):
+#     * **`name`**
 #
 FactoryBot.define do
   factory :skill do

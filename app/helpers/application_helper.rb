@@ -12,10 +12,16 @@ module ApplicationHelper
     # Safe: filter_html: true strips raw HTML from the source before
     # Redcarpet renders it, so the output here is sanitized markdown.
     # rubocop:disable-next Rails/OutputSafety
-    markdown.render(text).html_safe
+    markdown.render(unwrap_code_fences(text)).html_safe
   end
 
   private
+
+  def unwrap_code_fences(text)
+    cleaned = text.strip
+    m = cleaned.match(/\A```(?:markdown)?\s*\n(?<body>.*)\n\s*```\s*\z/m)
+    m ? m[:body].strip : cleaned
+  end
 
   # One cohesive options hash -- splitting it further would obscure it,
   # not simplify it.

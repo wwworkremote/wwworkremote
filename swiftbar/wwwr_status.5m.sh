@@ -1,6 +1,6 @@
 #!/bin/bash
 # <bitbar.title>wwwr pipeline status</bitbar.title>
-# <bitbar.desc>Live pipeline status for wwworkremote/core, from bin/wwwr.</bitbar.desc>
+# <bitbar.desc>Live pipeline status for wwworkremote/wwworkremote, from bin/wwwr.</bitbar.desc>
 # <bitbar.author>Mike Hall</bitbar.author>
 #
 # Not run directly from the repo -- SwiftBar only picks up scripts inside

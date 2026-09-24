@@ -7,28 +7,37 @@
 # tooling can see whether an id changed mid-flow rather than only ever
 # seeing the last one. #kind is a free string, not a fixed enum: new
 # providers introduce new kinds. See docs/architecture/signature-registry.md.
-# == Schema Information
+# ## Schema Information
 #
-# Table name: scenario_signatures
+# Table name: `scenario_signatures`
 #
-#  id                :bigint           not null, primary key
-#  first_observed_at :datetime         not null
-#  kind              :string           not null
-#  source            :jsonb
-#  step              :string
-#  value             :string           not null
-#  created_at        :datetime         not null
-#  updated_at        :datetime         not null
-#  scenario_id       :bigint           not null
+# ### Columns
 #
-# Indexes
+# Name                     | Type               | Attributes
+# ------------------------ | ------------------ | ---------------------------
+# **`id`**                 | `bigint`           | `not null, primary key`
+# **`first_observed_at`**  | `datetime`         | `not null`
+# **`kind`**               | `string`           | `not null`
+# **`source`**             | `jsonb`            |
+# **`step`**               | `string`           |
+# **`value`**              | `string`           | `not null`
+# **`created_at`**         | `datetime`         | `not null`
+# **`updated_at`**         | `datetime`         | `not null`
+# **`scenario_id`**        | `bigint`           | `not null`
 #
-#  idx_scenario_signatures_uniq              (scenario_id,kind,value) UNIQUE
-#  index_scenario_signatures_on_scenario_id  (scenario_id)
+# ### Indexes
 #
-# Foreign Keys
+# * `idx_scenario_signatures_uniq` (_unique_):
+#     * **`scenario_id`**
+#     * **`kind`**
+#     * **`value`**
+# * `index_scenario_signatures_on_scenario_id`:
+#     * **`scenario_id`**
 #
-#  fk_rails_...  (scenario_id => scenarios.id)
+# ### Foreign Keys
+#
+# * `fk_rails_...`:
+#     * **`scenario_id => scenarios.id`**
 #
 class ScenarioSignature < ApplicationRecord
   # #source (nullable) is a value-free provenance breadcrumb for a signature

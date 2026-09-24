@@ -55,10 +55,12 @@ RSpec.describe "The Career Orchestration Loop", type: :system do
     mock_analysis = "MATCH_CONFIDENCE: 92%"
     allow(LLM::Orchestrator).to receive(:call).and_return({ success: true, output: mock_analysis })
 
-    # Use a very specific button matcher
-    click_button "Check Match"
+    # Match analysis lives in the posting-information tab set.
+    find('input[aria-label="Match analysis"]', visible: false).click
+    find('section[aria-label="Match analysis"]', visible: false).find("button", text: "Analyze match",
+                                                                                visible: false).click
     expect(page).to have_text(/scan complete/i)
-    expect(page).to have_text("MATCH_CONFIDENCE: 92%")
+    expect(page.body).to include("MATCH_CONFIDENCE: 92%")
     expect(LLM::Orchestrator).to have_received(:call).at_least(:once)
 
     # 3. Priority Recognition

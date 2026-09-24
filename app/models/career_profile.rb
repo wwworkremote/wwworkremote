@@ -1,31 +1,38 @@
 # frozen_string_literal: true
 
-# == Schema Information
+# ## Schema Information
 #
-# Table name: career_profiles
+# Table name: `career_profiles`
 #
-#  id               :bigint           not null, primary key
-#  contact_info     :jsonb
-#  embedding        :vector(768)
-#  experience_level :string
-#  github_context   :jsonb
-#  github_url       :string
-#  goals            :text
-#  location_info    :jsonb
-#  resume_text      :text
-#  skills           :text
-#  created_at       :datetime         not null
-#  updated_at       :datetime         not null
-#  user_id          :bigint           not null
+# ### Columns
 #
-# Indexes
+# Name                    | Type               | Attributes
+# ----------------------- | ------------------ | ---------------------------
+# **`id`**                | `bigint`           | `not null, primary key`
+# **`contact_info`**      | `jsonb`            |
+# **`embedding`**         | `vector(768)`      |
+# **`experience_level`**  | `string`           |
+# **`github_context`**    | `jsonb`            |
+# **`github_url`**        | `string`           |
+# **`goals`**             | `text`             |
+# **`location_info`**     | `jsonb`            |
+# **`resume_text`**       | `text`             |
+# **`skills`**            | `text`             |
+# **`created_at`**        | `datetime`         | `not null`
+# **`updated_at`**        | `datetime`         | `not null`
+# **`user_id`**           | `bigint`           | `not null`
 #
-#  index_career_profiles_on_embedding_hnsw  (((embedding)::halfvec(768)) halfvec_cosine_ops) USING hnsw
-#  index_career_profiles_on_user_id         (user_id)
+# ### Indexes
 #
-# Foreign Keys
+# * `index_career_profiles_on_embedding_hnsw` (_using_ hnsw):
+#     * **`((embedding)::halfvec(768)) halfvec_cosine_ops`**
+# * `index_career_profiles_on_user_id`:
+#     * **`user_id`**
 #
-#  fk_rails_...  (user_id => users.id)
+# ### Foreign Keys
+#
+# * `fk_rails_...`:
+#     * **`user_id => users.id`**
 #
 class CareerProfile < ApplicationRecord
   belongs_to :user

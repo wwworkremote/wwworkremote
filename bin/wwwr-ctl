@@ -46,7 +46,7 @@ _meta() {
 }
 
 ALL_SVCS=(web jobs)
-WEB_READY_TIMEOUT=60
+WEB_READY_TIMEOUT=30
 
 # Solid Queue's ForkSupervisor uses fork(), not exec() -- if a prior
 # non-launchd-managed run's supervisor dies (crash, nohup/foreman restart

@@ -94,6 +94,9 @@ RSpec.describe "GuidedSessions" do
       expect(response.body).to include("Application research")
       expect(response.body).to include("Open research flow")
       expect(response.body).to include("guided_session_token=#{session.session_token}")
+      expect(response.body).to include("How this session works")
+      expect(response.body).to include("supervised evidence lap")
+      expect(response.body).to include("Approval boundary")
     end
 
     it "summarises the fields filled during the session without showing values (AC#2)" do
@@ -157,6 +160,17 @@ RSpec.describe "GuidedSessions" do
 
       expect(response).to have_http_status(:unprocessable_content)
       expect(session.reload.playback_position).to eq(0)
+    end
+  end
+
+  describe "POST /guided_sessions/:id/cancel" do
+    it "stops an active session and preserves its record" do
+      session = GuidedSession.create!(source_url: "https://jobs.example.com/roles/42")
+
+      expect { post cancel_guided_session_path(session) }.not_to change(GuidedSession, :count)
+
+      expect(response).to redirect_to(guided_session_path(session))
+      expect(session.reload.status).to eq("stopped")
     end
   end
 

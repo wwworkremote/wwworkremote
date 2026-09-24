@@ -1,20 +1,25 @@
 # frozen_string_literal: true
 
-# == Schema Information
+# ## Schema Information
 #
-# Table name: discovery_links
+# Table name: `discovery_links`
 #
-#  id            :bigint           not null, primary key
-#  board_name    :string
-#  error_message :text
-#  status        :string
-#  url           :string
-#  created_at    :datetime         not null
-#  updated_at    :datetime         not null
+# ### Columns
 #
-# Indexes
+# Name                 | Type               | Attributes
+# -------------------- | ------------------ | ---------------------------
+# **`id`**             | `bigint`           | `not null, primary key`
+# **`board_name`**     | `string`           |
+# **`error_message`**  | `text`             |
+# **`status`**         | `string`           |
+# **`url`**            | `string`           |
+# **`created_at`**     | `datetime`         | `not null`
+# **`updated_at`**     | `datetime`         | `not null`
 #
-#  index_discovery_links_on_url  (url) UNIQUE
+# ### Indexes
+#
+# * `index_discovery_links_on_url` (_unique_):
+#     * **`url`**
 #
 class DiscoveryLink < ApplicationRecord
   validates :url, presence: true, uniqueness: true

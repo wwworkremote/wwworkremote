@@ -19,7 +19,7 @@ class QuestionGraph::SandboxWalkthrough
   private
 
   def user
-    @user ||= User.find_or_create_by!(email: "mike@just3ws.com") { |u| u.password = "password" }
+    @user ||= User.find_or_create_by!(email: Wwwr::Identity.email) { |u| u.password = Wwwr::Identity.password }
   end
 
   def application_for(slug)

@@ -3,27 +3,34 @@
 # A reviewable semantic cluster of Question Occurrences (ADR 008). Wording
 # variants of the same underlying question live here without being flattened.
 # Mergeable and splittable -- see QuestionArchetypes::Merge / ::Split.
-# == Schema Information
+# ## Schema Information
 #
-# Table name: question_archetypes
+# Table name: `question_archetypes`
 #
-#  id               :bigint           not null, primary key
-#  canonical_prompt :string           not null
-#  label            :string           not null
-#  notes            :text
-#  question_kind    :string           not null
-#  created_at       :datetime         not null
-#  updated_at       :datetime         not null
-#  merged_into_id   :bigint
+# ### Columns
 #
-# Indexes
+# Name                    | Type               | Attributes
+# ----------------------- | ------------------ | ---------------------------
+# **`id`**                | `bigint`           | `not null, primary key`
+# **`canonical_prompt`**  | `string`           | `not null`
+# **`label`**             | `string`           | `not null`
+# **`notes`**             | `text`             |
+# **`question_kind`**     | `string`           | `not null`
+# **`created_at`**        | `datetime`         | `not null`
+# **`updated_at`**        | `datetime`         | `not null`
+# **`merged_into_id`**    | `bigint`           |
 #
-#  index_question_archetypes_on_merged_into_id  (merged_into_id)
-#  index_question_archetypes_on_question_kind   (question_kind)
+# ### Indexes
 #
-# Foreign Keys
+# * `index_question_archetypes_on_merged_into_id`:
+#     * **`merged_into_id`**
+# * `index_question_archetypes_on_question_kind`:
+#     * **`question_kind`**
 #
-#  fk_rails_...  (merged_into_id => question_archetypes.id)
+# ### Foreign Keys
+#
+# * `fk_rails_...`:
+#     * **`merged_into_id => question_archetypes.id`**
 #
 class QuestionArchetype < ApplicationRecord
   belongs_to :merged_into, class_name: "QuestionArchetype", optional: true

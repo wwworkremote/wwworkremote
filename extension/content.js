@@ -34,7 +34,6 @@
   // 'application_execution' runs the chrome.debugger HAR / full-page path.
   const guidedSessionPurpose = urlParams.get('guided_session_purpose');
   const isGuidedExecution = guidedSessionPurpose === 'application_execution';
-  const IS_APP_HOST = ['wwworkremote.localhost', 'wwwr.localhost'].includes(window.location.hostname);
   const localLeadMatch = window.location.pathname.match(/^\/admin\/leads\/(\d+)/);
   const isLocalReviewContext = !!localLeadMatch && (['wwwr.localhost', 'wwworkremote.localhost'].includes(window.location.hostname) ||
     (window.location.hostname === 'localhost' && window.location.port === '31000'));
@@ -1283,10 +1282,6 @@
 
   const hostname = window.location.hostname;
   const IS_SANDBOX_HOST = hostname === 'wwworkremote.localhost';
-  // The Rails app is a control surface, never an ingestion source. Keep the
-  // extension available for its explicit lead-review route, but do not run
-  // provider detection, extraction, or lead capture on ordinary app pages.
-  if (IS_APP_HOST && !isLocalReviewContext) return;
   let provider = null;
   for (const [key, p] of Object.entries(PROVIDERS)) {
     if (p.match(hostname)) { provider = { key, ...p }; break; }

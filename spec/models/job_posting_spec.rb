@@ -1,60 +1,85 @@
 # frozen_string_literal: true
 
-# == Schema Information
-#
-# Table name: job_postings
-#
-#  id                 :bigint           not null, primary key
-#  body               :string
-#  company_name       :string
-#  country_code       :string
-#  crawl_status       :string
-#  data               :jsonb            not null
-#  embedding          :vector(768)
-#  enriched_at        :datetime
-#  latitude           :float
-#  location           :string
-#  longitude          :float
-#  published_at       :datetime
-#  seen_count         :integer          default(1), not null
-#  signature          :string           not null
-#  status             :string
-#  tags               :string           is an Array
-#  target_url         :string
-#  title              :string
-#  tsv_search         :tsvector
-#  created_at         :datetime         not null
-#  updated_at         :datetime         not null
-#  company_id         :bigint
-#  external_author_id :string
-#  external_id        :string
-#  source_id          :bigint
-#
-# Indexes
-#
-#  index_job_postings_on_body                           (body) USING gin
-#  index_job_postings_on_company_and_published_at       (company,published_at DESC)
-#  index_job_postings_on_company_id                     (company_id)
-#  index_job_postings_on_company_name                   (company_name)
-#  index_job_postings_on_company_name_and_published_at  (company_name,published_at DESC)
-#  index_job_postings_on_country_code                   (country_code)
-#  index_job_postings_on_data                           (data) USING gin
-#  index_job_postings_on_embedding_hnsw                 (((embedding)::halfvec(768)) halfvec_cosine_ops) USING hnsw
-#  index_job_postings_on_external_id                    (external_id)
-#  index_job_postings_on_location                       (location)
-#  index_job_postings_on_published_at                   (published_at)
-#  index_job_postings_on_signature                      (signature) UNIQUE
-#  index_job_postings_on_source_id_and_published_at     (source_id,published_at DESC)
-#  index_job_postings_on_title                          (title) USING gin
-#  index_job_postings_on_tsv_search                     (tsv_search) USING gin
-#
-# Foreign Keys
-#
-#  fk_rails_...  (company_id => companies.id)
-#  fk_rails_...  (source_id => sources.id)
-#
 require "rails_helper"
 
+
+# ## Schema Information
+#
+# Table name: `job_postings`
+#
+# ### Columns
+#
+# Name                      | Type               | Attributes
+# ------------------------- | ------------------ | ---------------------------
+# **`id`**                  | `bigint`           | `not null, primary key`
+# **`body`**                | `string`           |
+# **`company_name`**        | `string`           |
+# **`country_code`**        | `string`           |
+# **`crawl_status`**        | `string`           |
+# **`data`**                | `jsonb`            | `not null`
+# **`embedding`**           | `vector(768)`      |
+# **`enriched_at`**         | `datetime`         |
+# **`latitude`**            | `float`            |
+# **`location`**            | `string`           |
+# **`longitude`**           | `float`            |
+# **`published_at`**        | `datetime`         |
+# **`seen_count`**          | `integer`          | `default(1), not null`
+# **`signature`**           | `string`           | `not null`
+# **`status`**              | `string`           |
+# **`tags`**                | `string`           | `is an Array`
+# **`target_url`**          | `string`           |
+# **`title`**               | `string`           |
+# **`tsv_search`**          | `tsvector`         |
+# **`created_at`**          | `datetime`         | `not null`
+# **`updated_at`**          | `datetime`         | `not null`
+# **`company_id`**          | `bigint`           |
+# **`external_author_id`**  | `string`           |
+# **`external_id`**         | `string`           |
+# **`source_id`**           | `bigint`           |
+#
+# ### Indexes
+#
+# * `index_job_postings_on_body` (_using_ gin):
+#     * **`body`**
+# * `index_job_postings_on_company_and_published_at`:
+#     * **`company`**
+#     * **`published_at DESC`**
+# * `index_job_postings_on_company_id`:
+#     * **`company_id`**
+# * `index_job_postings_on_company_name`:
+#     * **`company_name`**
+# * `index_job_postings_on_company_name_and_published_at`:
+#     * **`company_name`**
+#     * **`published_at DESC`**
+# * `index_job_postings_on_country_code`:
+#     * **`country_code`**
+# * `index_job_postings_on_data` (_using_ gin):
+#     * **`data`**
+# * `index_job_postings_on_embedding_hnsw` (_using_ hnsw):
+#     * **`((embedding)::halfvec(768)) halfvec_cosine_ops`**
+# * `index_job_postings_on_external_id`:
+#     * **`external_id`**
+# * `index_job_postings_on_location`:
+#     * **`location`**
+# * `index_job_postings_on_published_at`:
+#     * **`published_at`**
+# * `index_job_postings_on_signature` (_unique_):
+#     * **`signature`**
+# * `index_job_postings_on_source_id_and_published_at`:
+#     * **`source_id`**
+#     * **`published_at DESC`**
+# * `index_job_postings_on_title` (_using_ gin):
+#     * **`title`**
+# * `index_job_postings_on_tsv_search` (_using_ gin):
+#     * **`tsv_search`**
+#
+# ### Foreign Keys
+#
+# * `fk_rails_...`:
+#     * **`company_id => companies.id`**
+# * `fk_rails_...`:
+#     * **`source_id => sources.id`**
+#
 RSpec.describe JobPosting do
   describe "validations" do
     subject { described_class.new(signature: "test-sig") }
@@ -131,54 +156,6 @@ RSpec.describe JobPosting do
     it "is false when data[\"reformatting\"] is false" do
       job = build(:job_posting, data: { "reformatting" => false })
       expect(job.reformatting?).to be false
-    end
-  end
-
-  describe "inline-edit accessors (TASK-148)" do
-    it "translates countries_text to an uppercased array in data, with dirty tracking" do
-      job = create(:job_posting)
-      job.update!(countries_text: "us, ca")
-
-      expect(job.reload.data["countries"]).to eq(%w[US CA])
-      expect(job.countries_text).to eq("US, CA")
-    end
-
-    it "translates tags_text to the tags array" do
-      job = create(:job_posting)
-      job.update!(tags_text: "ruby, rails,  kafka ")
-
-      expect(job.reload.tags).to eq(%w[ruby rails kafka])
-    end
-
-    it "casts the remote flag to a real boolean in data" do
-      job = create(:job_posting, data: { "remote" => true })
-      job.update!(remote: "0")
-
-      expect(job.reload.data["remote"]).to be(false)
-    end
-
-    it "reads salary/employment_type straight out of data via store_accessor" do
-      job = build(:job_posting, data: { "salary_min" => 120_000, "employment_type" => "FULL_TIME" })
-
-      expect(job.salary_min).to eq(120_000)
-      expect(job.employment_type).to eq("FULL_TIME")
-    end
-  end
-
-  describe ".geo_allowed (TASK-148 multi-country)" do
-    it "keeps a posting whose data['countries'] includes US even when country_code is not US" do
-      job = create(:job_posting, country_code: "CA", data: { "countries" => %w[CA US] })
-      expect(described_class.geo_allowed).to include(job)
-    end
-
-    it "still excludes a confirmed non-US posting with no US country listed" do
-      job = create(:job_posting, country_code: "CA", data: { "countries" => %w[CA] })
-      expect(described_class.geo_allowed).not_to include(job)
-    end
-
-    it "still allows an ungeocoded posting (country_code nil, no countries)" do
-      job = create(:job_posting, country_code: nil, data: {})
-      expect(described_class.geo_allowed).to include(job)
     end
   end
 

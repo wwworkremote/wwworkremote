@@ -11,6 +11,7 @@ RSpec.describe Resume::YamlImporter do
   # here rather than stubbed over HTTP so these stay unit tests.
   let(:source) do
     {
+      "archetypes" => {},
       "profile" => {
         "name" => "Mike Hall",
         "location" => { "display" => "Chicago, IL" },

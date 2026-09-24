@@ -5,19 +5,25 @@
 # account/tenant exists at `identifier` on `provider`; never credentials.
 # The next capture at the same employer looks this up before assuming
 # sense-making from zero.
-# == Schema Information
+# ## Schema Information
 #
-# Table name: tenant_identities
+# Table name: `tenant_identities`
 #
-#  id         :bigint           not null, primary key
-#  identifier :string           not null
-#  provider   :string           not null
-#  created_at :datetime         not null
-#  updated_at :datetime         not null
+# ### Columns
 #
-# Indexes
+# Name              | Type               | Attributes
+# ----------------- | ------------------ | ---------------------------
+# **`id`**          | `bigint`           | `not null, primary key`
+# **`identifier`**  | `string`           | `not null`
+# **`provider`**    | `string`           | `not null`
+# **`created_at`**  | `datetime`         | `not null`
+# **`updated_at`**  | `datetime`         | `not null`
 #
-#  index_tenant_identities_on_provider_and_identifier  (provider,identifier) UNIQUE
+# ### Indexes
+#
+# * `index_tenant_identities_on_provider_and_identifier` (_unique_):
+#     * **`provider`**
+#     * **`identifier`**
 #
 class TenantIdentity < ApplicationRecord
   has_many :scenarios, dependent: :nullify

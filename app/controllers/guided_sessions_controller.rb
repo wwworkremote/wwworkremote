@@ -7,7 +7,7 @@ class GuidedSessionsController < ApplicationController
   SESSION_STARTED_NOTICE = "Supervised application session started."
 
   skip_before_action :verify_authenticity_token, only: :playback
-  before_action :set_guided_session, only: %i[show playback complete compare]
+  before_action :set_guided_session, only: %i[show playback complete compare cancel]
 
   def index
     @guided_sessions = GuidedSession.includes(user_job_posting: { job_posting: :company })
@@ -58,6 +58,11 @@ class GuidedSessionsController < ApplicationController
   def compare
     Scenarios::RecordComparison.call(@guided_session, trigger: "manual")
     redirect_to guided_session_path(@guided_session), notice: "Compared against the provider reference."
+  end
+
+  def cancel
+    @guided_session.cancel!
+    redirect_to guided_session_path(@guided_session), notice: "Guided session cancelled."
   end
 
   private

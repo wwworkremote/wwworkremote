@@ -30,6 +30,18 @@ RSpec.describe "UserJobPostings" do
       expect(user.pipeline_steps.last.note).to eq("User marked as favorite")
     end
 
+    it "unfavorites an already favorited posting back to none and redirects back to referer" do
+      create(:user_job_posting, user: user, job_posting: job_posting, status: "favorited")
+
+      expect {
+        post user_job_postings_path, params: { job_posting_id: job_posting.id, status: "unfavorite" },
+                                     headers: { "HTTP_REFERER" => "/job_postings?role_family=staff_plus_ic" }
+      }.to change(user.pipeline_steps, :count).by(1)
+
+      expect(UserJobPosting.find_by(job_posting: job_posting).status).to eq("none")
+      expect(response).to redirect_to("/job_postings?role_family=staff_plus_ic")
+    end
+
     it "ignores a status event that is not in the allowed whitelist" do
       post user_job_postings_path, params: { job_posting_id: job_posting.id, status: "delete_everything" }
 
@@ -93,6 +105,68 @@ RSpec.describe "UserJobPostings" do
       expect {
         post user_job_postings_path, params: { job_posting_id: job_posting.id, outcome: "rejected" }
       }.not_to raise_error
+    end
+  end
+
+  describe "PATCH /user_job_postings/:id" do
+    it "sets a follow-up date on the current user's pipeline record" do
+      user_job = create(:user_job_posting, user: user, job_posting: job_posting, status: "applied")
+      follow_up_at = 2.days.from_now.change(sec: 0)
+
+      patch user_job_posting_path(user_job), params: { user_job_posting: { follow_up_at: follow_up_at.iso8601 } }
+
+      expect(response).to redirect_to(user_job_postings_path)
+      expect(user_job.reload.follow_up_at).to be_within(1.second).of(follow_up_at)
+    end
+  end
+
+  describe "GET /user_job_postings" do
+    it "renders a swimlane board by pipeline state" do
+      create(:user_job_posting, user: user, job_posting: job_posting, status: "favorited")
+
+      get user_job_postings_path, params: { view: "board" }
+
+      expect(response).to have_http_status(:ok)
+      expect(response.body).to include("Job search board", "Saved", job_posting.title)
+      expect(response.body).to include("Move to interview")
+    end
+
+    it "filters the pipeline to follow-ups due now" do
+      due = create(:user_job_posting, user: user, job_posting: job_posting, status: "applied", follow_up_at: 1.hour.ago)
+      future_posting = create(:job_posting, title: "Future follow-up role")
+      create(:user_job_posting, user: user, job_posting: future_posting, status: "applied",
+                                follow_up_at: 1.day.from_now)
+
+      get user_job_postings_path, params: { status: "due" }
+
+      expect(response).to have_http_status(:ok)
+      expect(response.body).to include(job_posting.title)
+      expect(response.body).not_to include(future_posting.title)
+      expect(due.reload.follow_up_at).to be <= Time.current
+    end
+  end
+
+  describe "POST /user_job_postings/bulk_action" do
+    it "applies a valid transition only to the current user's selected records" do
+      first = create(:user_job_posting, user: user, status: "favorited")
+      second = create(:user_job_posting, user: user, status: "favorited")
+
+      post bulk_action_user_job_postings_path,
+           params: { user_job_posting_ids: [first.id, second.id], bulk_operation: "apply" }
+
+      expect(first.reload.status).to eq("applied")
+      expect(second.reload.status).to eq("applied")
+      expect(flash[:notice]).to eq("2 pipeline records updated.")
+    end
+  end
+
+  describe "GET /user_job_postings?status=idle" do
+    it "sorts idle applications without ambiguous joined timestamps" do
+      create(:user_job_posting, user: user, status: "applied", created_at: 5.days.ago)
+
+      get user_job_postings_path, params: { status: "idle", sort: "oldest" }
+
+      expect(response).to be_successful
     end
   end
 

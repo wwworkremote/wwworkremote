@@ -58,7 +58,7 @@ bin/wwwr match <job_posting_id> --source=just3ws-cli --escalate  # runs a fresh 
 just an attribution tag logged server-side so it's clear which tool asked. Reads are always safe;
 `--escalate` is the one write path (costs LLM tokens, overwrites the stored analysis) and is opt-in
 per call. `admin/leads/:id` is a browser-session-authenticated admin view, not an API — don't curl
-it from `just3ws`. Full contract: `docs/agents/interop.md` in `wwworkremote/core`.
+it from `just3ws`. Full contract: `docs/agents/interop.md` in `wwworkremote/wwworkremote`.
 
 ---
 

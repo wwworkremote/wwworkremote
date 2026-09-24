@@ -15,7 +15,7 @@ class Admin::PipelineStepsController < Admin::ApplicationController
   # favorite/apply/interview/archive are Mike's own pipeline stage --
   # UserJobPosting owns them (TASK-82). JobPosting has no such methods as
   # of phase 3.
-  PIPELINE_EVENTS = %w[favorite apply interview archive].freeze
+  PIPELINE_EVENTS = %w[favorite unfavorite apply interview archive].freeze
 
   # Whitelisted by key, not passed through raw -- these are jsonb-column
   # values, not model attributes, so strong params' usual guard against

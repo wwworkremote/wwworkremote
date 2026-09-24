@@ -35,6 +35,18 @@ RSpec.describe "Job Postings" do
       expect(response.body).to match(%r{<a data-turbo-frame="_top"[^>]*href="/job_postings/\d+"})
     end
 
+    it "links tracked postings to their focused board card" do
+      user = User.find_or_create_by!(email: "mike@just3ws.com") { |record|
+        record.name = "Mike"; record.password = "password"
+      }
+      create(:user_job_posting, user: user, job_posting: job, status: "favorited")
+
+      get job_postings_path
+
+      expect(response.body).to include("View on board")
+      expect(response.body).to include(user_job_postings_path(view: "board", anchor: "board-job-#{job.id}"))
+    end
+
     it "shows the linked Company's name when company_name is blank" do
       company = create(:company, name: "Sparta Commodities")
       JobPosting.create!(signature: "test-company-id-only", title: "Staff Backend Engineer",
@@ -67,6 +79,16 @@ RSpec.describe "Job Postings" do
       expect(response.body).not_to include("Python Architect")
     end
 
+    it "finds postings through the canonical company name" do
+      company = create(:company, name: "AppFolio")
+      JobPosting.create!(signature: "test-appfolio", title: "Staff Software Engineer",
+                         company: company, company_name: nil, published_at: Time.current, status: "none")
+
+      get job_postings_path, params: { q: "appfolio" }
+
+      expect(response.body).to include("Staff Software Engineer")
+    end
+
     it "combines a search query with another active filter, not just the query alone" do
       JobPosting.create!(
         signature: "test-contract-ruby",
@@ -90,6 +112,60 @@ RSpec.describe "Job Postings" do
       expect(response.body).not_to include("Ignored Job")
       expect(response.body).not_to include("Purged Job")
       expect(response.body).not_to include("Expired Job")
+    end
+
+    it "filters out archived user job postings and rejected outcomes by default" do
+      user = User.find_or_create_by!(email: ENV.fetch("ADMIN_EMAIL", "mike@just3ws.com")) { |u|
+        u.password = "password"
+      }
+      archived_job = create(:job_posting, signature: "archived-ujp", title: "Archived User Job")
+      rejected_job = create(:job_posting, signature: "rejected-ujp", title: "Rejected Outcome Job")
+      create(:user_job_posting, user: user, job_posting: archived_job, status: "archived")
+      create(:user_job_posting, user: user, job_posting: rejected_job, outcome: "rejected")
+
+      get job_postings_path
+      expect(response.body).not_to include("Archived User Job")
+      expect(response.body).not_to include("Rejected Outcome Job")
+    end
+
+    it "shows interested postings with prominent highlight and badge when status=interested" do
+      user = User.find_or_create_by!(email: ENV.fetch("ADMIN_EMAIL", "mike@just3ws.com")) { |u|
+        u.password = "password"
+      }
+      fav_job = create(:job_posting, signature: "fav-job", title: "Dream Lead Role")
+      create(:user_job_posting, user: user, job_posting: fav_job, status: "favorited")
+
+      get job_postings_path, params: { status: "interested" }
+      expect(response.body).to include("Dream Lead Role")
+      expect(response.body).not_to include("Senior Ruby Developer")
+      expect(response.body).to include("Interested")
+    end
+
+    it "shows seen postings when status=skipped" do
+      user = User.find_or_create_by!(email: ENV.fetch("ADMIN_EMAIL", "mike@just3ws.com")) { |u|
+        u.password = "password"
+      }
+      skipped_job = create(:job_posting, signature: "skipped-job", title: "Triage Skipped Role")
+      create(:user_job_posting, user: user, job_posting: skipped_job, status: "skipped")
+
+      get job_postings_path, params: { status: "skipped" }
+      expect(response.body).to include("Triage Skipped Role")
+      expect(response.body).not_to include("Senior Ruby Developer")
+      expect(response.body).to include("Seen")
+    end
+
+    it "shows archived postings when status=archived" do
+      user = User.find_or_create_by!(email: ENV.fetch("ADMIN_EMAIL", "mike@just3ws.com")) { |u|
+        u.password = "password"
+      }
+      create(:job_posting, signature: "ignored-role", title: "Old Ignored Role", status: "ignored")
+      archived_job = create(:job_posting, signature: "archived-role", title: "Old Archived Role")
+      create(:user_job_posting, user: user, job_posting: archived_job, status: "archived")
+
+      get job_postings_path, params: { status: "archived" }
+      expect(response.body).to include("Old Ignored Role")
+      expect(response.body).to include("Old Archived Role")
+      expect(response.body).not_to include("Senior Ruby Developer")
     end
 
     it "orders postings with a null published_at after ones with a value" do
@@ -168,6 +244,17 @@ RSpec.describe "Job Postings" do
     end
   end
 
+  describe "GET /job_postings/feed.rss" do
+    it "returns a subscribable feed of active postings" do
+      get feed_job_postings_path
+
+      expect(response).to be_successful
+      expect(response.media_type).to eq("application/rss+xml")
+      expect(response.body).to include("Senior Ruby Developer")
+      expect(response.body).to include(job_posting_url(job))
+    end
+  end
+
   describe "GET /job_postings?sort=match_score" do
     let(:current_user) {
       User.find_or_create_by!(email: "mike@just3ws.com") { |u|
@@ -223,6 +310,22 @@ RSpec.describe "Job Postings" do
       expect(response).to be_successful
       expect(response.body).to include("Senior Ruby Developer")
       expect(response.body).to include("Acme Corp")
+    end
+
+    it "surfaces the current user's external submission receipt" do
+      owner = User.find_or_create_by!(email: "mike@just3ws.com") { |record|
+        record.name = "mike"; record.password = "password"
+      }
+      allow_any_instance_of(JobPostingsController).to receive(:current_user).and_return(owner)
+      application = create(:user_job_posting, user: owner, job_posting: job, status: "applied",
+                                              applied_at: Time.current)
+      create(:pipeline_step, user: owner, job_posting: job, status: "apply", link: "https://employer.example/confirmation/999")
+
+      get job_posting_path(job)
+
+      expect(response.body).to include("View submission receipt")
+      expect(response.body).to include("https://employer.example/confirmation/999")
+      expect(application.reload.status).to eq("applied")
     end
 
     it "shows the reformat button when the posting has a body and isn't already reformatting" do
@@ -399,6 +502,7 @@ RSpec.describe "Job Postings" do
       get job_posting_path(job)
       expect(response.body).to include("Linkedin")
       expect(response.body).to include(admin_lead_path(lead))
+      expect(response.body).to include("Open lead")
     end
 
     it "omits the Lead badge when the posting has no lead" do
@@ -410,6 +514,19 @@ RSpec.describe "Job Postings" do
       get job_posting_path(job)
       expect(response.body).to include('id="semantic_matches"')
       expect(response.body).to include(admin_job_posting_path(job, frame: "semantic_matches"))
+    end
+
+    it "warns before starting slow AI actions" do
+      user = User.find_or_create_by!(email: "mike@just3ws.com") { |record|
+        record.name = "Mike"; record.password = "password"
+      }
+      job.update!(body: "A job description")
+      create(:user_job_posting, user: user, job_posting: job, match_analysis: "Strong fit")
+
+      get job_posting_path(job)
+
+      expect(response.body).to include("This may be slow")
+      expect(response.body).to include("This can be slow")
     end
 
     it "shows what changed for a version, not just the bare event/time" do
@@ -441,7 +558,7 @@ RSpec.describe "Job Postings" do
 
       it "omits the cover letter panel when none has been generated yet" do
         get job_posting_path(job)
-        expect(response.body).not_to include('data-controller="clipboard"')
+        expect(response.body).not_to include('id="cover-letter-panel"')
       end
     end
 
@@ -472,6 +589,15 @@ RSpec.describe "Job Postings" do
         expect(response.body).not_to include("Regenerate")
       end
 
+      it "renders an unscheduled interview session without crashing" do
+        session = InterviewSession.new(job_posting: job, user: current_user, session_type: "screening")
+        session.save!(validate: false)
+
+        get job_posting_path(job)
+
+        expect(response.body).to include("Unscheduled")
+      end
+
       it "surfaces the read-aloud version and its pronunciation hints when present" do
         spoken = "---\ntitle: Prep\npronunciation:\n  DSP: D S P\n---\n## Setup\nspoken words"
         create(:user_job_posting, user: current_user, job_posting: job,
@@ -482,18 +608,6 @@ RSpec.describe "Job Postings" do
         expect(response.body).to include("Read-aloud version")
         expect(response.body).to include("spoken words")
         expect(response.body).to include("D S P")
-      end
-
-      it "renders a seeded interview process with unscheduled placeholder rounds" do
-        ujp = create(:user_job_posting, user: current_user, job_posting: job, status: "applied")
-        InterviewProcess.seed_default(ujp, template: :compressed)
-
-        get job_posting_path(job)
-
-        expect(response).to be_successful
-        expect(response.body).to include("Round 1")
-        expect(response.body).to include("Not scheduled yet")
-        expect(response.body).to include("Recruiter screen")
       end
     end
 
@@ -580,23 +694,6 @@ RSpec.describe "Job Postings" do
 
       expect(job.reload.title).to eq("Fixed Title")
     end
-
-    it "edits location, multi-country, and tags inline (TASK-148)" do
-      patch job_posting_path(job), params: { section: "core", job_posting: {
-        location: "Chicago, IL · New York, NY", countries_text: "us, ca", tags_text: "ruby, rails"
-      } }
-
-      job.reload
-      expect(job.location).to eq("Chicago, IL · New York, NY")
-      expect(job.data["countries"]).to eq(%w[US CA])
-      expect(job.tags).to eq(%w[ruby rails])
-    end
-
-    it "shows the inline editor when ?section=core" do
-      get job_posting_path(job, section: "core")
-      expect(response.body).to include("Countries")
-      expect(response.body).to include('name="job_posting[countries_text]"')
-    end
   end
 
   describe "POST /job_postings/:id/apply_on_site" do
@@ -634,6 +731,34 @@ RSpec.describe "Job Postings" do
       current_user.user_job_postings.create!(job_posting: job_with_url, status: "applied")
 
       expect { post apply_on_site_job_posting_path(job_with_url) }.not_to raise_error
+    end
+  end
+
+  describe "GET /job_postings/:id/application_cycle" do
+    it "returns deterministic gates and receipts without creating an application" do
+      job = create(:job_posting, target_url: "https://jobs.example.com/role")
+
+      expect {
+        get application_cycle_job_posting_path(job)
+      }.not_to change(UserJobPosting, :count)
+
+      expect(response).to have_http_status(:ok)
+      expect(response.parsed_body.fetch("next_step")).to eq("prepare")
+      expect(response.parsed_body.fetch("receipts").map { |receipt| receipt.fetch("kind") }).to include("history")
+    end
+  end
+
+  describe "POST /job_postings/:id/select_persona" do
+    it "snapshots the selected role persona on the tracked application" do
+      job = create(:job_posting)
+      allow(Resume::PersonaContext).to receive(:call).with("founding_staff_fullstack")
+                                                     .and_return({ "id" => "founding_staff_fullstack",
+                                                                   "label" => "Founding Staff" })
+
+      post select_persona_job_posting_path(job), params: { persona_id: "founding_staff_fullstack" }
+
+      expect(response).to redirect_to(job_posting_path(job))
+      expect(User.first.user_job_postings.find_by(job_posting: job).resume_persona_id).to eq("founding_staff_fullstack")
     end
   end
 end

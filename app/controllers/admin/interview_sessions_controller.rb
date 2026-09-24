@@ -7,6 +7,12 @@ class Admin::InterviewSessionsController < ApplicationController
     @session.save ? redirect_on_session_saved : redirect_on_session_failed
   end
 
+  def update
+    @session = InterviewSession.find(params.expect(:id))
+    @session.update!(session_params)
+    redirect_to job_posting_path(@session.job_posting), notice: "Interview outcome recorded."
+  end
+
   private
 
   def build_session
@@ -23,6 +29,6 @@ class Admin::InterviewSessionsController < ApplicationController
   end
 
   def session_params
-    params.permit(:session_type, :scheduled_at, :notes, :vibe, :feedback)
+    params.permit(:session_type, :scheduled_at, :notes, :vibe, :feedback, :outcome, :interviewers)
   end
 end

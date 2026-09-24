@@ -4,7 +4,7 @@ require "rails_helper"
 
 RSpec.describe LLM::InterviewPrepGenerator::PromptBuilder do
   let(:profile) { create(:career_profile, skills: "Ruby, Rails", goals: "Staff role") }
-  let(:job) { create(:job_posting, title: "Sr Engineer", company_name: "Example", body: "Build the DSP.") }
+  let(:job) { create(:job_posting, title: "Sr Engineer", company_name: "Acme", body: "Build the platform.") }
 
   before do
     create(:work_experience, career_profile: profile, title: "Architect", company_name: "OneMain",
@@ -14,7 +14,7 @@ RSpec.describe LLM::InterviewPrepGenerator::PromptBuilder do
   it "includes the posting, an experience, and the section instructions" do
     prompt = described_class.call(profile, job)
 
-    expect(prompt).to include("Sr Engineer").and include("Example").and include("Build the DSP.")
+    expect(prompt).to include("Sr Engineer").and include("Acme").and include("Build the platform.")
     expect(prompt).to include("Architect at OneMain")
     expect(prompt).to include("YOUR STORY").and include("NIGHT-BEFORE CHECKLIST")
   end
@@ -42,12 +42,13 @@ RSpec.describe LLM::InterviewPrepGenerator::PromptBuilder do
   end
 
   it "names the linked referral contact when one exists" do
-    create(:contact, job_posting: job, name: "Example", role: "Staff Engineer", relationship_type: "former colleague")
+    create(:contact, job_posting: job, name: "Jordan", role: "Staff Engineer", relationship_type: "former colleague")
 
     prompt = described_class.call(profile, job)
 
-    expect(prompt).to include("Example")
+    expect(prompt).to include("Jordan")
   end
+
 
   it "tells the model to omit the referral section when no contact is linked" do
     prompt = described_class.call(profile, job)

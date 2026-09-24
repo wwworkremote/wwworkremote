@@ -1,53 +1,68 @@
 # frozen_string_literal: true
 
-# == Schema Information
+# ## Schema Information
 #
-# Table name: user_job_postings
+# Table name: `user_job_postings`
 #
-#  id                               :bigint           not null, primary key
-#  application_profile_snapshot     :jsonb            not null
-#  applied_at                       :datetime
-#  cover_letter                     :text
-#  follow_up_at                     :datetime
-#  interview_prep_pack              :text
-#  interview_prep_pack_generated_at :datetime
-#  interview_prep_pack_spoken       :text
-#  match_analysis                   :text
-#  match_score                      :integer
-#  match_tags                       :text             default([]), not null, is an Array
-#  notes                            :text
-#  outcome                          :string
-#  outcome_at                       :datetime
-#  outcome_reason                   :text
-#  outcome_source                   :string
-#  priority_flag                    :boolean
-#  resume_persona_snapshot          :jsonb            not null
-#  status                           :string
-#  strategy                         :jsonb            not null
-#  created_at                       :datetime         not null
-#  updated_at                       :datetime         not null
-#  application_trace_id             :string
-#  job_posting_id                   :bigint           not null
-#  job_search_id                    :bigint
-#  resume_persona_id                :string
-#  user_id                          :bigint           not null
+# ### Columns
 #
-# Indexes
+# Name                                    | Type               | Attributes
+# --------------------------------------- | ------------------ | ---------------------------
+# **`id`**                                | `bigint`           | `not null, primary key`
+# **`application_profile_snapshot`**      | `jsonb`            | `not null`
+# **`applied_at`**                        | `datetime`         |
+# **`cover_letter`**                      | `text`             |
+# **`follow_up_at`**                      | `datetime`         |
+# **`interview_prep_pack`**               | `text`             |
+# **`interview_prep_pack_generated_at`**  | `datetime`         |
+# **`interview_prep_pack_spoken`**        | `text`             |
+# **`match_analysis`**                    | `text`             |
+# **`match_score`**                       | `integer`          |
+# **`match_tags`**                        | `text`             | `default([]), not null, is an Array`
+# **`notes`**                             | `text`             |
+# **`outcome`**                           | `string`           |
+# **`outcome_at`**                        | `datetime`         |
+# **`outcome_reason`**                    | `text`             |
+# **`outcome_source`**                    | `string`           |
+# **`priority_flag`**                     | `boolean`          |
+# **`resume_persona_snapshot`**           | `jsonb`            | `not null`
+# **`status`**                            | `string`           |
+# **`strategy`**                          | `jsonb`            | `not null`
+# **`created_at`**                        | `datetime`         | `not null`
+# **`updated_at`**                        | `datetime`         | `not null`
+# **`application_trace_id`**              | `string`           |
+# **`job_posting_id`**                    | `bigint`           | `not null`
+# **`job_search_id`**                     | `bigint`           |
+# **`resume_persona_id`**                 | `string`           |
+# **`user_id`**                           | `bigint`           | `not null`
 #
-#  index_user_job_postings_on_application_trace_id  (application_trace_id)
-#  index_user_job_postings_on_applied_at            (applied_at)
-#  index_user_job_postings_on_follow_up_at          (follow_up_at)
-#  index_user_job_postings_on_job_posting_id        (job_posting_id)
-#  index_user_job_postings_on_job_search_id         (job_search_id)
-#  index_user_job_postings_on_match_score           (match_score)
-#  index_user_job_postings_on_outcome               (outcome)
-#  index_user_job_postings_on_user_id               (user_id)
+# ### Indexes
 #
-# Foreign Keys
+# * `index_user_job_postings_on_application_trace_id`:
+#     * **`application_trace_id`**
+# * `index_user_job_postings_on_applied_at`:
+#     * **`applied_at`**
+# * `index_user_job_postings_on_follow_up_at`:
+#     * **`follow_up_at`**
+# * `index_user_job_postings_on_job_posting_id`:
+#     * **`job_posting_id`**
+# * `index_user_job_postings_on_job_search_id`:
+#     * **`job_search_id`**
+# * `index_user_job_postings_on_match_score`:
+#     * **`match_score`**
+# * `index_user_job_postings_on_outcome`:
+#     * **`outcome`**
+# * `index_user_job_postings_on_user_id`:
+#     * **`user_id`**
 #
-#  fk_rails_...  (job_posting_id => job_postings.id)
-#  fk_rails_...  (job_search_id => job_searches.id)
-#  fk_rails_...  (user_id => users.id)
+# ### Foreign Keys
+#
+# * `fk_rails_...`:
+#     * **`job_posting_id => job_postings.id`**
+# * `fk_rails_...`:
+#     * **`job_search_id => job_searches.id`**
+# * `fk_rails_...`:
+#     * **`user_id => users.id`**
 #
 class UserJobPosting < ApplicationRecord
   include AASM
@@ -82,17 +97,29 @@ class UserJobPosting < ApplicationRecord
   # UserJobPostingsController::MANUAL_OUTCOMES.
   aasm column: :status, whiny_persistence: true do
     state :none, initial: true
-    state :favorited, :applied, :interview, :archived
+    state :favorited, :applied, :interview, :archived, :skipped
 
     event :favorite do
-      transitions from: %i[none archived], to: :favorited
+      transitions from: %i[none archived skipped], to: :favorited
+    end
+
+    event :unfavorite do
+      transitions from: %i[favorited], to: :none
+    end
+
+    event :skip do
+      transitions from: %i[none], to: :skipped
+    end
+
+    event :unskip do
+      transitions from: %i[skipped], to: :none
     end
 
     # `none` is a valid origin: applying directly from a board (or from the
     # Chrome extension while sitting on the application page) is the common
     # path, and requiring a favorite first made `applied` unreachable.
     event :apply do
-      transitions from: %i[none favorited interview], to: :applied
+      transitions from: %i[none favorited interview skipped], to: :applied
     end
 
     event :interview do
@@ -105,11 +132,12 @@ class UserJobPosting < ApplicationRecord
     # archive event allowed this too before TASK-82 phase 3 moved archiving
     # off JobPosting, so this preserves the same reachable behavior.
     event :archive do
-      transitions from: %i[none favorited applied interview], to: :archived
+      transitions from: %i[none favorited applied interview skipped], to: :archived
     end
   end
 
-  STATUS_EVENTS = %w[favorite apply interview archive].freeze
+  STATUS_EVENTS = %w[favorite unfavorite apply interview archive skip unskip].freeze
+
 
   # "Processed through the harness" (ADR 010 / TASK-125): a tracked
   # application with at least one completed guided session. One definition,
@@ -150,7 +178,7 @@ class UserJobPosting < ApplicationRecord
   # TASK-93: "actively pursuing, gone quiet." archived/none excluded --
   # archived means Mike stopped, none means he never started.
   ACTIVE_STATUSES = %w[favorited applied interview].freeze
-  TERMINAL_OUTCOMES = %w[offered rejected].freeze
+  TERMINAL_OUTCOMES = %w[offered rejected closed].freeze
   IDLE_AFTER = 3.days
 
   # Mirrors #last_pipeline_activity_at's fallback (see there for why a
@@ -181,6 +209,8 @@ class UserJobPosting < ApplicationRecord
       .where("#{LAST_ACTIVITY_SQL} < ?", IDLE_AFTER.ago)
       .order(Arel.sql("#{LAST_ACTIVITY_SQL} ASC"))
   }
+
+  scope :follow_up_due, -> { where(user_job_postings: { follow_up_at: ..Time.current }) }
 
   # Falls back to created_at, never nil -- the live UI always logs a
   # PipelineStep on every status change (record_status_event!/

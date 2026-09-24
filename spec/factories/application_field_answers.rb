@@ -1,33 +1,43 @@
 # frozen_string_literal: true
 
-# == Schema Information
+# ## Schema Information
 #
-# Table name: application_field_answers
+# Table name: `application_field_answers`
 #
-#  id                   :bigint           not null, primary key
-#  answer               :text             not null
-#  answer_source        :string           not null
-#  field_key            :string           not null
-#  field_label          :string           not null
-#  field_type           :string           not null
-#  guided_session_token :string
-#  page_url             :string
-#  provided_at          :datetime         not null
-#  created_at           :datetime         not null
-#  updated_at           :datetime         not null
-#  trace_id             :string
-#  user_job_posting_id  :bigint           not null
+# ### Columns
 #
-# Indexes
+# Name                        | Type               | Attributes
+# --------------------------- | ------------------ | ---------------------------
+# **`id`**                    | `bigint`           | `not null, primary key`
+# **`answer`**                | `text`             | `not null`
+# **`answer_source`**         | `string`           | `not null`
+# **`field_key`**             | `string`           | `not null`
+# **`field_label`**           | `string`           | `not null`
+# **`field_type`**            | `string`           | `not null`
+# **`guided_session_token`**  | `string`           |
+# **`page_url`**              | `string`           |
+# **`provided_at`**           | `datetime`         | `not null`
+# **`created_at`**            | `datetime`         | `not null`
+# **`updated_at`**            | `datetime`         | `not null`
+# **`trace_id`**              | `string`           |
+# **`user_job_posting_id`**   | `bigint`           | `not null`
 #
-#  idx_app_fields_on_app_and_key                            (user_job_posting_id,field_key) UNIQUE
-#  index_application_field_answers_on_guided_session_token  (guided_session_token)
-#  index_application_field_answers_on_trace_id              (trace_id)
-#  index_application_field_answers_on_user_job_posting_id   (user_job_posting_id)
+# ### Indexes
 #
-# Foreign Keys
+# * `idx_app_fields_on_app_and_key` (_unique_):
+#     * **`user_job_posting_id`**
+#     * **`field_key`**
+# * `index_application_field_answers_on_guided_session_token`:
+#     * **`guided_session_token`**
+# * `index_application_field_answers_on_trace_id`:
+#     * **`trace_id`**
+# * `index_application_field_answers_on_user_job_posting_id`:
+#     * **`user_job_posting_id`**
 #
-#  fk_rails_...  (user_job_posting_id => user_job_postings.id)
+# ### Foreign Keys
+#
+# * `fk_rails_...`:
+#     * **`user_job_posting_id => user_job_postings.id`**
 #
 FactoryBot.define do
   factory :application_field_answer do

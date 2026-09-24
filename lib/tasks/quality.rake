@@ -2,7 +2,7 @@
 
 require "English"
 namespace :quality do
-  desc "Run all static analysis tools (RuboCop, Brakeman, Reek, Flay, Flog, RailsBestPractices, Bundle-Audit)"
+  desc "Run all static analysis tools (including Rubydex structural checks)"
   task all: :environment do
     errors = []
     # rake quality runs under RAILS_ENV=test in CI, immediately before `rspec`
@@ -19,6 +19,9 @@ namespace :quality do
     else
       errors << "RuboCop failed to run"
     end
+
+    puts "\n🧭 Running Rubydex structural checks..."
+    errors << "Rubydex failed" unless system("bundle exec rdx lint")
 
     puts "\n🛡️ Running Brakeman..."
     brakeman_report = `bundle exec brakeman -q -w2 --no-pager -f json`

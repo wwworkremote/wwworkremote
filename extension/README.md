@@ -1,6 +1,6 @@
 # WWWorkRemote Ingestion Assistant
 
-Current unpacked build: `1.36.13`.
+Current unpacked build: `1.36.12`.
 
 On tracked application pages, the extension also performs a read-only ATS
 capability probe. It records whether forms, discoverable fields, uploads,

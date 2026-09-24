@@ -1,5 +1,26 @@
 # frozen_string_literal: true
 
+# ## Schema Information
+#
+# Table name: `domains`
+#
+# ### Columns
+#
+# Name                  | Type               | Attributes
+# --------------------- | ------------------ | ---------------------------
+# **`id`**              | `bigint`           | `not null, primary key`
+# **`name`**            | `citext`           | `not null`
+# **`created_at`**      | `datetime`         | `not null`
+# **`updated_at`**      | `datetime`         | `not null`
+# **`root_domain_id`**  | `bigint`           |
+#
+# ### Indexes
+#
+# * `index_domains_on_name` (_unique_):
+#     * **`name`**
+# * `index_domains_on_root_domain_id`:
+#     * **`root_domain_id`**
+#
 class Domain < ApplicationRecord
   has_many :target_domains, dependent: :destroy
   has_many :job_postings, through: :target_domains
@@ -19,19 +40,3 @@ class Domain < ApplicationRecord
   #   end
   # end
 end
-
-# == Schema Information
-#
-# Table name: domains
-#
-#  id             :bigint           not null, primary key
-#  name           :citext           not null
-#  created_at     :datetime         not null
-#  updated_at     :datetime         not null
-#  root_domain_id :bigint
-#
-# Indexes
-#
-#  index_domains_on_name            (name) UNIQUE
-#  index_domains_on_root_domain_id  (root_domain_id)
-#

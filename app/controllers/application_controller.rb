@@ -48,8 +48,7 @@ class ApplicationController < ActionController::Base
   end
 
   def admin_credentials?(username, password)
-    username == ENV.fetch("ADMIN_EMAIL", "mike@just3ws.com") &&
-      password == ENV.fetch("ADMIN_PASSWORD", "password")
+    username == Wwwr::Identity.email && password == Wwwr::Identity.password
   end
 
   def available_chat_models

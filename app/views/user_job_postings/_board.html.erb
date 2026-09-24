@@ -1,0 +1,79 @@
+<% active_tracked = tracked.reject { |record| record.outcome.in?(UserJobPosting::TERMINAL_OUTCOMES) } %>
+<% resolved = tracked.select { |record| record.outcome.in?(UserJobPosting::TERMINAL_OUTCOMES) } %>
+<div class="mb-3 text-xs font-black uppercase tracking-widest text-primary">Job search board</div>
+<div class="grid grid-cols-1 xl:grid-cols-4 gap-4" aria-label="Active job search board">
+  <% lanes.each do |status, label| %>
+    <% cards = active_tracked.select { |record| record.status == status } %>
+    <section class="min-h-56 rounded-2xl border border-white/10 bg-base-200/60 p-3" aria-labelledby="lane-<%= status %>">
+      <header class="mb-3 flex items-center justify-between border-b border-white/10 pb-3">
+        <h2 id="lane-<%= status %>" class="text-xs font-black uppercase tracking-widest text-slate-400"><%= label %></h2>
+        <span class="badge badge-sm border-white/10 text-slate-400"><%= cards.size %></span>
+      </header>
+      <div class="space-y-3">
+        <% cards.each do |user_job| %>
+          <% job = user_job.job_posting %>
+          <article id="board-job-<%= job.id %>" class="rounded-xl border border-white/10 bg-base-300 p-4 shadow-lg target:border-primary target:ring-2 target:ring-primary/40">
+            <div class="text-[10px] font-bold text-slate-500"><%= job.company_name.presence || "Company unknown" %></div>
+            <h3 class="mt-1 text-sm font-black leading-tight text-white"><%= link_to job.title, job_posting_path(job), class: "hover:text-primary" %></h3>
+            <div class="mt-3 flex flex-wrap gap-1.5 text-[10px] font-bold">
+              <% if job.leads.any? %><%= link_to "Lead", admin_lead_path(job.leads.first), class: "rounded border border-accent/30 px-1.5 py-0.5 text-accent" %><% end %>
+              <% if user_job.cover_letter.present? %><%= link_to "Packet", job_posting_path(job, anchor: "application-packet"), class: "rounded border border-secondary/30 px-1.5 py-0.5 text-secondary" %><% end %>
+              <% if user_job.follow_up_at.present? %><span class="rounded border border-warning/30 px-1.5 py-0.5 text-warning">Follow-up <%= user_job.follow_up_at.strftime("%b %-d") %></span><% end %>
+              <% if job.data["is_remote"] %><span class="rounded border border-success/30 px-1.5 py-0.5 text-success">Remote</span><% end %>
+            </div>
+            <div class="mt-3 grid grid-cols-2 gap-2 border-t border-white/10 pt-3 text-[10px] font-bold text-slate-500">
+              <% lead_at = job.leads.first&.found_at || job.leads.first&.created_at %>
+              <span>Lead age: <strong class="text-slate-300"><%= lead_at ? time_ago_in_words(lead_at) : "unknown" %></strong></span>
+              <span>In state: <strong class="text-slate-300"><%= time_ago_in_words(user_job.last_pipeline_activity_at) %></strong></span>
+            </div>
+            <% if user_job.follow_up_at.present? %>
+              <div class="mt-2 text-[10px] font-black <%= user_job.follow_up_at <= Time.current ? 'text-warning' : 'text-slate-500' %>">
+                <%= user_job.follow_up_at <= Time.current ? "FOLLOW-UP DUE" : "Follow-up #{time_ago_in_words(user_job.follow_up_at)}" %>
+              </div>
+            <% end %>
+            <div class="mt-4 flex flex-wrap items-center gap-2 border-t border-white/10 pt-3">
+              <%= link_to "Open", job_posting_path(job), class: "text-xs font-bold text-primary hover:text-white" %>
+              <% if status == "interview" && user_job.interview_prep_pack.blank? %>
+                <%= button_to "Prepare interview", generate_interview_prep_user_job_postings_path(job_posting_id: job.id), class: "btn btn-xs rounded-lg bg-accent/15 text-accent border-none font-bold", data: { turbo_confirm: "Generate the interview prep pack with AI? This may be slow and will create a tailored preparation asset." } %>
+              <% end %>
+              <% next_event = { "none" => "favorite", "favorited" => "apply", "applied" => "interview" }[status] %>
+              <% if next_event %>
+                <% next_label = { "favorite" => "Save", "apply" => "Mark applied", "interview" => "Move to interview" }.fetch(next_event) %>
+                <%= button_to next_label, user_job_postings_path(job_posting_id: job.id, status: next_event), class: "btn btn-xs rounded-lg bg-primary/15 text-primary border-none font-bold" %>
+              <% end %>
+            </div>
+          </article>
+        <% end %>
+        <% if cards.empty? %><p class="py-8 text-center text-xs font-bold text-slate-600">No roles here</p><% end %>
+      </div>
+    </section>
+  <% end %>
+</div>
+
+<% if resolved.any? %>
+  <details class="mt-8 rounded-2xl border border-rose-500/20 bg-base-200/60 p-4" open>
+    <summary class="flex cursor-pointer list-none items-center justify-between text-xs font-black uppercase tracking-widest text-rose-300">
+      <span>Resolved outcomes · off active board</span>
+      <span class="badge badge-sm border-rose-500/20 text-rose-300"><%= resolved.size %></span>
+    </summary>
+    <p class="mt-2 text-xs text-slate-500">Rejected and offered roles stay searchable for history, cooldowns, and lessons learned.</p>
+    <div class="mt-4 grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
+      <% resolved.each do |user_job| %>
+        <% job = user_job.job_posting %>
+        <article id="resolved-job-<%= job.id %>" class="rounded-xl border border-rose-500/15 bg-base-300 p-4">
+          <div class="flex items-start justify-between gap-3">
+            <div>
+              <div class="text-[10px] font-bold text-slate-500"><%= job.company_name.presence || "Company unknown" %></div>
+              <h3 class="mt-1 text-sm font-black leading-tight text-white"><%= link_to job.title, job_posting_path(job), class: "hover:text-primary" %></h3>
+            </div>
+            <span class="rounded border border-rose-500/30 px-1.5 py-0.5 text-[10px] font-black uppercase text-rose-300"><%= user_job.outcome.humanize %></span>
+          </div>
+          <div class="mt-3 flex items-center justify-between text-[10px] font-bold text-slate-500">
+            <span><%= user_job.outcome_at ? "#{time_ago_in_words(user_job.outcome_at)} ago" : "Date unknown" %></span>
+            <%= link_to "Open record", job_posting_path(job), class: "text-primary hover:text-white" %>
+          </div>
+        </article>
+      <% end %>
+    </div>
+  </details>
+<% end %>

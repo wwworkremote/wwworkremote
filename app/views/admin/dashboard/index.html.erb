@@ -5,6 +5,27 @@
   </div>
 </div>
 
+<section aria-labelledby="admin-next-actions" class="mb-12 rounded-2xl border border-primary/30 bg-primary/5 p-5 sm:p-7">
+  <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-5">
+    <div>
+      <div class="text-xs font-black uppercase tracking-widest text-primary mb-2">Operations command center</div>
+      <h2 id="admin-next-actions" class="text-xl font-black text-white">What needs attention?</h2>
+      <p class="text-sm text-slate-400 mt-2">
+        <% if @top_data_quality_finding %>
+          <%= @top_data_quality_finding[:missing] %> postings are missing <%= @top_data_quality_finding[:field].downcase %> data. This is the highest-value reconciliation queue.
+        <% else %>
+          No known data-quality gaps. Monitor ingestion and worker health below.
+        <% end %>
+      </p>
+    </div>
+    <div class="flex flex-wrap gap-2 shrink-0">
+      <%= link_to "Review data gaps", admin_data_quality_path, class: "btn btn-primary btn-sm rounded-lg font-black" %>
+      <%= link_to "Inspect ingestion", data_fetchers_path, class: "btn btn-ghost btn-sm rounded-lg border-white/20 font-bold" %>
+      <%= link_to "Check workers", "/mounts/jobs", class: "btn btn-ghost btn-sm rounded-lg border-white/20 font-bold" %>
+    </div>
+  </div>
+</section>
+
 <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-8 mb-16">
   <div class="stats w-full bg-base-200 border border-white/10 shadow-2xl">
     <div class="stat p-5 sm:p-8">
@@ -35,9 +56,9 @@
       <div class="stat-title text-xs font-bold text-slate-500 mb-2">Sources</div>
       <div class="stat-value text-kanagawa-green text-5xl font-black tracking-tighter"><%= @sources_count %></div>
       <div class="stat-actions mt-6">
-        <button disabled class="btn btn-disabled btn-sm rounded-lg font-bold text-xs w-full opacity-50">
-          View Disabled
-        </button>
+        <%= link_to data_fetchers_path, class: "btn btn-ghost border-white/20 btn-sm rounded-lg font-bold text-xs w-full" do %>
+          Inspect Sources
+        <% end %>
       </div>
     </div>
   </div>

@@ -110,9 +110,10 @@
           </h3>
 
           <div class="space-y-6">
-            <div class="prose-invert text-sm leading-relaxed">
+            <div class="prose prose-invert max-w-none text-sm leading-relaxed">
               <%= markdown(@career_profile.github_context['synthesis']) %>
             </div>
+
 
             <div class="pt-4 border-t border-white/5">
               <div class="text-xs font-bold text-slate-500 mb-2"><%= t('.repos_analyzed_label') %></div>

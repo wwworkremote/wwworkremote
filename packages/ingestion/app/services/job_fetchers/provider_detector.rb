@@ -29,6 +29,8 @@ module JobFetchers::ProviderDetector
     return "generic" if url.blank?
 
     url_lower = url.to_s.downcase
+    return "greenhouse" if url_lower.include?("gh_jid=")
+
     DOMAINS.find { |domain, _| url_lower.include?(domain) }&.last || "generic"
   end
 end

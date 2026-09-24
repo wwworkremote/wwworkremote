@@ -8,6 +8,11 @@
       <p class="text-slate-400 font-medium"><%= @guided_session.purpose == "application_research" ? "Research mode: inspect and record the application flow without committing or submitting." : "Application mode: work toward applying under supervision; submission remains separately approval-gated." %></p>
     </div>
     <span class="badge badge-primary badge-outline font-bold"><%= @guided_session.status.humanize %></span>
+    <% if @guided_session.status.in?(%w[active paused]) %>
+      <%= button_to "Cancel session", cancel_guided_session_path(@guided_session), method: :post,
+                    data: { turbo_confirm: "Cancel this guided session? Its recorded evidence will be kept, but the session will stop." },
+                    class: "btn btn-sm btn-error btn-outline rounded-lg font-bold" %>
+    <% end %>
   </div>
 
   <div class="flex flex-wrap items-center gap-3 mb-6" aria-label="Playback controls">
@@ -22,6 +27,28 @@
     <div class="text-xs font-black uppercase tracking-widest text-slate-500 mb-2">Now playing</div>
     <div class="text-lg font-black text-white" data-guided-session-playback-target="current">Ready to begin the lap</div>
   </div>
+
+  <section class="card-neural mb-10 p-6" aria-labelledby="session-guide">
+    <div class="flex items-start justify-between gap-4">
+      <div>
+        <h2 id="session-guide" class="text-xs font-black uppercase tracking-widest text-primary">How this session works</h2>
+        <p class="mt-2 text-sm text-slate-300">This is a supervised evidence lap, not an autonomous submission.</p>
+      </div>
+      <span class="text-xs font-bold text-slate-500"><%= @guided_session.status.humanize %> · <%= @guided_session.phase.humanize %></span>
+    </div>
+    <dl class="mt-5 grid gap-4 text-xs md:grid-cols-3">
+      <div><dt class="font-black uppercase tracking-widest text-slate-500">Playback</dt><dd class="mt-1 text-slate-300">Play, pause, and step through recorded events. These controls do not contact the employer.</dd></div>
+      <div><dt class="font-black uppercase tracking-widest text-slate-500">Open application</dt><dd class="mt-1 text-slate-300">Opens the source with this session’s correlation token so the extension can capture fields and receipts.</dd></div>
+      <div><dt class="font-black uppercase tracking-widest text-slate-500">Approval boundary</dt><dd class="mt-1 text-slate-300">Completion records evidence and proposes a task. Only the human task queue can confirm Applied with an agreement acknowledgement and receipt.</dd></div>
+    </dl>
+    <% if @guided_session.status.in?(%w[active paused]) %>
+      <p class="mt-5 border-t border-white/10 pt-4 text-xs font-bold text-warning">Next: open the source, review each field, and pause before any final Submit action. Cancel keeps the recorded evidence but stops this session.</p>
+    <% elsif @guided_session.status == "completed" %>
+      <p class="mt-5 border-t border-white/10 pt-4 text-xs font-bold text-success">This session is evidence-complete. Review the pending human task for receipt-backed Applied confirmation before scheduling the next follow-up.</p>
+    <% else %>
+      <p class="mt-5 border-t border-white/10 pt-4 text-xs font-bold text-slate-400">This session is stopped. Its evidence remains available for review, but it will not advance the application.</p>
+    <% end %>
+  </section>
 
   <div class="grid md:grid-cols-4 gap-3 mb-10">
     <% %w[Intake Resolution Response\ Construction Reorientation].each_with_index do |phase, index| %>

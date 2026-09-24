@@ -64,9 +64,9 @@ gem "rack-cors"
 gem "ransack"
 gem "redcarpet"
 gem "reverse_markdown"
-gem "ruby_llm"
+gem "ruby_llm", "~> 1.16.0"
 gem "ruby_llm-instrumentation"
-gem "ruby_llm-schema"
+gem "ruby_llm-schema", "~> 0.4.0"
 gem "solid_cable"
 gem "solid_cache"
 gem "solid_queue"
@@ -90,6 +90,9 @@ group :development, :test do
   gem "faker"
   gem "flay", require: false
   gem "i18n-tasks", require: false
+  # Rails 8.1's ActiveRecord JSON type still uses the two-argument parse API;
+  # json 3.0 removed it and fails during transactional test rollback.
+  gem "json", "< 3"
   gem "overcommit"
   gem "packwerk", require: false
   gem "pghero"
@@ -107,6 +110,8 @@ group :development, :test do
   gem "rubocop-rspec_rails", require: false
   gem "rubocop-rubycw", require: false
   gem "rubocop-thread_safety", require: false
+  # Project-wide structural checks; invoked explicitly by bin/rubydex.
+  gem "rubydex", require: false
   gem "ruby-graphviz", require: false
   gem "selenium-webdriver"
   gem "shoulda-matchers"

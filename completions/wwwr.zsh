@@ -1,7 +1,7 @@
 #compdef wwwr bin/wwwr
 # zsh completion for bin/wwwr. Install by adding the completions/ directory to
 # fpath before compinit in ~/.zshrc:
-#   fpath=(/path/to/wwworkremote/core/completions $fpath)
+#   fpath=(/path/to/wwworkremote/wwworkremote/completions $fpath)
 #   autoload -Uz compinit && compinit
 
 _wwwr() {

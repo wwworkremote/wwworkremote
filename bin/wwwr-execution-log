@@ -1,0 +1,32 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+require "json"
+require "time"
+
+event, *args = ARGV
+abort "usage: bin/wwwr-execution-log EVENT key=value ..." if event.to_s.empty?
+
+fields = args.to_h do |argument|
+  key, value = argument.split("=", 2)
+  abort "invalid field: #{argument}" if key.to_s.empty? || value.nil?
+
+  [key, value]
+end
+
+required = %w[phase status]
+missing = required.reject { |key| fields.key?(key) }
+abort "missing required field(s): #{missing.join(', ')}" unless missing.empty?
+
+root = File.expand_path("..", __dir__)
+ledger = File.join(root, "docs", "agents", "execution-ledger.jsonl")
+record = {
+  "timestamp" => Time.now.utc.iso8601,
+  "event" => event,
+  "phase" => fields.delete("phase"),
+  "status" => fields.delete("status"),
+  "fields" => fields
+}
+
+File.open(ledger, "a") { |file| file.puts(JSON.generate(record)) }
+puts JSON.generate(record)
