@@ -1,5 +1,5 @@
 <!-- ═══════════════════════════════════════════════════════════════════════
-     CURRENT FOCUS  —  last updated 2026-09-24 (session 13)
+     CURRENT FOCUS  —  last updated 2026-09-26 (session 14)
      Cold-start resume state, canonical for every agent tool (Claude, Codex,
      Gemini, Antigravity). Whoever closes a session rewrites this whole block
      in place — step one, before the wrap-up. `git log` + Backlog are truth
@@ -20,20 +20,19 @@
     - This CURRENT FOCUS block is public — keep it scrubbed on every close.
 
   In flight:
-    TASK-151 (RubyLLM 2.0 Upgrade): COMPLETED in session 13.
-      Gem upgraded, schema migrated, models loaded, full test suite 100% green.
+    (none)
 
   NEXT UP:
     TASK-141 (High) dev web service wedges silently (watchdog mitigates, root cause open).
-    TASK-140 (Med) JobBoards::Syncer starves on unordered LIMIT (~6,831 nil-state rows).
     TASK-147.1 (Med) multi-round interview tracking (PR #23).
+    TASK-143  (Med) guided harness: no first-class Lever support.
 
   Live tasks (Backlog MCP):
     TASK-151  (Med, DONE) RubyLLM 1.16 to 2.0 upgrade.
+    TASK-140  (Med, DONE) JobBoards::Syncer starves on unordered LIMIT.
+              Fixed FIFO ordering, limit 500, mark_failed, drained backlog to 0 pending.
     TASK-141  (High, In Progress) dev web service wedges silently.
               Mitigated: cluster mode + WebHealthWatchdogJob. Root cause open.
-    TASK-140  (Med) JobBoards::Syncer starves on unordered LIMIT.
-              ~6,831 nil-state rows stuck since 2026-07-30. 5-step plan in task.
     TASK-147.1 (Med, In Progress) multi-round interview tracking — see PR #23.
     TASK-143  (Med) guided harness: no first-class Lever support.
     TASK-142  (Low) ClaudeAssets pre-commit hook broken on main.
@@ -41,13 +40,16 @@
     TASK-139  (Med) chrome.debugger dies before 2nd capture — needs retest.
     TASK-112  guided recorder HITL ACs #3/#4/#5 — wants a Greenhouse run.
 
-  Operational state (verified 2026-09-24):
+  Operational state (verified 2026-09-26):
     web: running via launchd (bin/wwwr-ctl status).
     jobs: running via launchd (bin/wwwr-ctl status).
     database: wwworkremote_development up to date with RubyLLM 2.0 tables.
     test suite: full suite 100% green (1286/1286 passing).
     git: clean after commit. Run bin/tmi-scan before pushing.
 
+  Done 2026-09-26 session 14 (Antigravity):
+    - Finalized and committed TASK-140: resolve JobBoards::Syncer starvation.
+    - Marked TASK-140 Done in Backlog.
   Done 2026-09-24 session 13 (Antigravity):
     - Executed TASK-151: Upgraded RubyLLM from 1.16 to 2.0.0.
     - Updated Gemfile (ruby_llm ~> 2.0.0, removed ruby_llm-schema), bundle install.
@@ -59,6 +61,7 @@
     - Updated ModelsController to RubyLLM.models.refresh.
     - Full test suite verified green (1286/1286 passing).
     - Restarted both web & jobs services cleanly.
+    - Fixed TASK-140 JobBoards::Syncer starvation, drained dev DB backlog (0 pending, 1 failed).
   Done 2026-09-24 session 12: Restored Slices 3-6, TASK-145, full suite green (4cca8790).
   Done 2026-09-21 session 11: TASK-145 Gemini/Anthropic provider fixes.
   Done session 10 (2026-09-16): DB backup, RuboCop cleanup, 4 migrations restored.
@@ -67,7 +70,7 @@
   DO NOT touch other repos from a wwworkremote/wwworkremote session. See memory
   feedback_stay_in_this_repo.
 
-  Deep handoff: ~/.config/adots/handoffs/2026-09-24-wwworkremote-session12.md
+  Deep handoff: ~/.config/adots/handoffs/2026-09-24-wwworkremote-session13.md
   (local-only, never commit).
 -->
 

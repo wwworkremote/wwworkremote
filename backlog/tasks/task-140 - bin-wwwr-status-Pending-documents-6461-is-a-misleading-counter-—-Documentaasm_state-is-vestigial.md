@@ -3,10 +3,10 @@ id: TASK-140
 title: >-
   JobBoards::Syncer starves on an unordered LIMIT — the nil-document backlog is
   real, not just a bad counter
-status: To Do
+status: Done
 assignee: []
 created_date: '2026-08-31 13:17'
-updated_date: '2026-09-03 04:00'
+updated_date: '2026-09-26 08:48'
 labels:
   - observability
   - cleanup
@@ -35,9 +35,9 @@ Options: drop the line from `bin/wwwr status`; or repoint it at something real (
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 bin/wwwr status no longer reports a number that looks like a backlog when there is none
-- [ ] #2 Whatever it reports (if anything) reflects real pending work, or the line is removed with a note why
-- [ ] #3 If JobBoards::Document / its aasm_state column is dead weight, it is removed or documented as retained-for-reason
+- [x] #1 bin/wwwr status no longer reports a number that looks like a backlog when there is none
+- [x] #2 Whatever it reports (if anything) reflects real pending work, or the line is removed with a note why
+- [x] #3 If JobBoards::Document / its aasm_state column is dead weight, it is removed or documented as retained-for-reason
 <!-- AC:END -->
 
 ## Implementation Notes
@@ -50,4 +50,23 @@ Live numbers 2026-09-02: 6831 nil docs (oldest 2026-07-30, +157 in 24h, +806 in 
 So TASK-140's premise 'nothing will ever transition them' is close but the mechanism is a starving unordered LIMIT, and the effect is a throughput collapse, not just a misleading number. Enrichment downstream is fine (postings that get created get enriched).
 
 Fix is a design call (why the task says 'decide during the task'): (a) order(created_at: :asc) + a terminal 'failed'/'rejected' state so un-convertible docs leave the working set; (b) raise the limit 10 -> ~500 so a run churns the whole backlog regardless of order; (c) a last_attempted_at cursor. Likely (a)+(b). Needs a characterization spec reproducing the starvation before touching the Syncer. Also still resolve the vestigial-column / bin/wwwr status counter question.
+
+2026-09-24 (session 13) -- RESOLVED.
+1. In `JobBoards::Syncer`:
+   - Raised DEFAULT_LIMIT from 10 to 500.
+   - Added `ORDER BY created_at ASC` and `scope.limit(limit)` to `fetch_pending_docs`.
+   - Replaced `find_each` with `.to_a` in `process_pending_docs` so batch size and FIFO order are strictly preserved.
+   - Added `mark_failed` logic when `sync_document` encounters unrecoverable errors or validation save failures (`handle_save_failure?`), preventing un-convertible documents from recycling indefinitely.
+   - Added `job_posting.may_ignore?` guards to prevent illegal AASM state transitions on already-ignored or purged postings.
+2. In `JobBoards::Document`:
+   - Documented the `aasm_state` lifecycle (plain string column retaining values 'pending' / nil, 'processed', 'failed').
+   - Added named scopes: `scope :pending`, `scope :processed`, `scope :failed`.
+3. In `lib/wwwr/cli.rb`:
+   - Updated `pending_documents_count` to use `Document.pending.count`.
+   - Added `failed_documents_count` and surfaced `Failed documents: <n>` when > 0.
+4. Development database backlog drained:
+   - 8,381 documents processed, reducing pending documents to 0.
+   - 1 corrupted document marked failed.
+   - Job postings increased from 6,949 to 15,437.
+5. All characterization and integration specs passing.
 <!-- SECTION:NOTES:END -->
