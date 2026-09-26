@@ -1,7 +1,10 @@
 # frozen_string_literal: true
 
+# rubocop:disable-next Metrics/ClassLength -- cohesive ingestion sync pipeline
 class JobBoards::Syncer
-  def call(limit: 10)
+  DEFAULT_LIMIT = 500
+
+  def call(limit: DEFAULT_LIMIT)
     run_sync(limit)
   rescue ActiveRecord::ConnectionTimeoutError => e
     Rails.logger.error "[Syncer] Database connection pool exhausted: #{e.message}. Halting sync."
@@ -18,14 +21,15 @@ class JobBoards::Syncer
   end
 
   def fetch_pending_docs(limit)
-    docs = JobBoards::Document.where(aasm_state: ["pending", nil]).limit(limit)
+    scope = JobBoards::Document.where(aasm_state: ["pending", nil]).order(created_at: :asc)
+    docs = limit ? scope.limit(limit) : scope
     Rails.logger.info "[Syncer] Found #{docs.count} pending documents (limited to #{limit})"
     docs
   end
 
   def process_pending_docs(pending_docs)
     sources_to_update = Set.new
-    processed_count = pending_docs.find_each.count { |doc| process_one?(doc, sources_to_update) }
+    processed_count = pending_docs.to_a.count { |doc| process_one?(doc, sources_to_update) }
     [processed_count, sources_to_update]
   end
 
@@ -42,17 +46,19 @@ class JobBoards::Syncer
   end
 
   # Use a transaction and rescue uniqueness errors for high-concurrency safety
+  # rubocop:disable-next Metrics/MethodLength -- rescue branches inflate line count
   def sync_document(doc)
     build_and_save_posting(doc, JSON.parse(doc.document))
   rescue ActiveRecord::RecordNotUnique
     recover_from_race?(doc)
   rescue StandardError => e
-    log_sync_error?(doc, e)
+    log_sync_error(doc, e)
+    mark_failed(doc)
+    false
   end
 
-  def log_sync_error?(doc, error)
+  def log_sync_error(doc, error)
     Rails.logger.error "[Syncer] Unexpected error syncing document #{doc.id}: #{error.message}"
-    false
   end
 
   # Extreme race condition: another thread created it between find and save.
@@ -88,7 +94,11 @@ class JobBoards::Syncer
     job_posting.source_id = resolve_dashboard_source(source).id
     AttributeMapper.call(job_posting, data, source.slug)
     CompanyResolver.call(job_posting)
-    job_posting.ignore unless JobBoards::QualityFilter.new(job_posting).useful?
+    apply_quality_filter(job_posting)
+  end
+
+  def apply_quality_filter(job_posting)
+    job_posting.ignore if job_posting.may_ignore? && !JobBoards::QualityFilter.new(job_posting).useful?
   end
 
   # Capture the result of save in a way that handles race conditions.
@@ -101,11 +111,13 @@ class JobBoards::Syncer
   end
 
   def mark_processed(doc)
-    if doc.respond_to?(:processed!)
-      doc.processed!
-    else
-      doc.update!(aasm_state: "processed", updated_at: Time.current)
-    end
+    doc.respond_to?(:processed!) ? doc.processed! : doc.update!(aasm_state: "processed", updated_at: Time.current)
+  end
+
+  def mark_failed(doc)
+    doc.respond_to?(:failed!) ? doc.failed! : doc.update!(aasm_state: "failed", updated_at: Time.current)
+  rescue StandardError => e
+    Rails.logger.error "[Syncer] Could not mark document #{doc.id} as failed: #{e.message}"
   end
 
   # Only categorize if not already enriched/categorized AND not ignored.
@@ -121,6 +133,7 @@ class JobBoards::Syncer
     return recover_from_race?(doc) if job_posting.errors[:signature].include?("has already been taken")
 
     log_validation_failure(job_posting, doc)
+    mark_failed(doc)
     false
   end
 

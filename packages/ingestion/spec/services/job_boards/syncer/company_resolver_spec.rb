@@ -36,5 +36,21 @@ RSpec.describe JobBoards::Syncer::CompanyResolver do
 
       expect(posting.status).to eq("ignored")
     end
+
+    it "matches an existing company with different case without raising a slug collision error" do
+      create(:company, name: "ClinChoice", slug: "clinchoice", ingestion_enabled: true)
+      posting = create(:job_posting, company_name: "Clinchoice", status: "none")
+
+      expect { described_class.call(posting) }.not_to raise_error
+      expect(posting.company_id).to eq(Company.find_by(slug: "clinchoice").id)
+    end
+
+    it "does not raise an invalid transition if the posting is already ignored" do
+      create(:company, name: "Meta Platforms", ingestion_enabled: false)
+      posting = create(:job_posting, company_name: "Meta Platforms", status: "ignored")
+
+      expect { described_class.call(posting) }.not_to raise_error
+      expect(posting.status).to eq("ignored")
+    end
   end
 end

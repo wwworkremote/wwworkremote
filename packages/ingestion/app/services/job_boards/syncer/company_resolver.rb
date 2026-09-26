@@ -18,7 +18,7 @@ class JobBoards::Syncer::CompanyResolver
 
     company = find_or_create_company
     @job_posting.company_id = company.id
-    @job_posting.ignore unless company.ingestion_enabled?
+    @job_posting.ignore if @job_posting.may_ignore? && !company.ingestion_enabled?
   end
 
   private
@@ -29,9 +29,16 @@ class JobBoards::Syncer::CompanyResolver
   # here or at any other call site.
   def find_or_create_company
     name = @job_posting.company_name
-    Company.find_or_create_by!(name: name) do |c|
-      c.slug = name.parameterize
+    slug = name.parameterize
+    Company.find_by("LOWER(name) = ? OR slug = ?", name.downcase, slug) ||
+      create_company(name, slug)
+  end
+
+  def create_company(name, slug)
+    Company.create!(name: name, slug: slug) do |c|
       c.ingestion_enabled = false if c.big_tech?
     end
+  rescue ActiveRecord::RecordNotUnique, ActiveRecord::RecordInvalid
+    Company.find_by("LOWER(name) = ? OR slug = ?", name.downcase, slug) || raise
   end
 end

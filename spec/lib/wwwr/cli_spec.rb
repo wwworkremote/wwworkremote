@@ -23,6 +23,20 @@ RSpec.describe Wwwr::CLI do
       expect { cli.run(["status"]) }.to output(/Unclaimed pending jobs: [1-9]/).to_stdout
       expect { cli.run(["status"]) }.to output(/Oldest unclaimed:.*JobPostingReformatJob/).to_stdout
     end
+
+    it "surfaces failed documents when present" do
+      source = create(:job_boards_source)
+      query = create(:job_boards_query, job_boards_source: source)
+      JobBoards::Document.create!(
+        source_id: source.id,
+        job_boards_query_id: query.id,
+        signature: "failed-doc-1",
+        document: "{}",
+        aasm_state: "failed"
+      )
+
+      expect { cli.run(["status"]) }.to output(/Failed documents:\s+1/).to_stdout
+    end
   end
 
   describe "postings" do

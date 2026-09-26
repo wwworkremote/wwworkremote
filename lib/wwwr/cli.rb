@@ -63,13 +63,23 @@ class Wwwr::CLI
   end
 
   def status_lines
+    lines = base_status_lines
+    lines.insert(3, "Failed documents:  #{failed_documents_count}") if failed_documents_count.positive?
+    lines
+  end
+
+  def base_status_lines
     ["Job postings:      #{JobPosting.count}", "Sources:           #{JobBoards::Source.count}",
      "Pending documents: #{pending_documents_count}", "Pipelines paused:  #{SystemSetting.paused?}",
      "Queue error rate:  #{solid_queue_error_rate}%", Wwwr::QueueStatus.call]
   end
 
   def pending_documents_count
-    JobBoards::Document.where(aasm_state: ["pending", nil]).count
+    JobBoards::Document.pending.count
+  end
+
+  def failed_documents_count
+    JobBoards::Document.failed.count
   end
 
   def solid_queue_error_rate
