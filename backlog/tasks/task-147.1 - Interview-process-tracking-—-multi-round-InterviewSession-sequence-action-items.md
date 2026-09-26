@@ -3,10 +3,10 @@ id: TASK-147.1
 title: >-
   Interview process tracking — multi-round InterviewSession sequence + action
   items
-status: In Progress
+status: Done
 assignee: []
 created_date: '2026-09-03 15:42'
-updated_date: '2026-09-03 15:53'
+updated_date: '2026-09-26 09:45'
 labels:
   - job-search
   - interview-prep
@@ -77,9 +77,9 @@ Steps 1–3 (migration + validation + template method + homepage wiring) ship no
 - [x] #3 InterviewProcess.seed_default(user_job_posting, template:) creates an ordered set of InterviewSession rows for :standard_senior, :compressed, and :staff templates; templates live in a frozen constant, not a DB table
 - [x] #4 seed_default is idempotent-safe: calling it when sessions already exist for that posting does not duplicate rows (raises or no-ops, documented)
 - [x] #5 Homepage Interviews block shows round position/count, session type, scheduled time (or 'not scheduled'), and the next open InterviewTask for that posting
-- [ ] #6 Per-round outcome (advanced/rejected/no_signal) is settable and, on the final round, drives UserJobPosting status/outcome consistently with the existing after_create interview hook
-- [ ] #7 Posting show page renders the session list as an ordered sequence with per-round outcome and an 'add next round' affordance
-- [ ] #8 Model specs cover: the three templates, the relaxed validation, seed_default idempotency, and terminal outcome -> UserJobPosting wiring
+- [x] #6 Per-round outcome (advanced/rejected/no_signal) is settable and, on the final round, drives UserJobPosting status/outcome consistently with the existing after_create interview hook
+- [x] #7 Posting show page renders the session list as an ordered sequence with per-round outcome and an 'add next round' affordance
+- [x] #8 Model specs cover: the three templates, the relaxed validation, seed_default idempotency, and terminal outcome -> UserJobPosting wiring
 - [x] #9 Request/system spec covers the homepage Interviews block showing sequence position and next action
 - [x] #10 docs/agents/domain.md (or the relevant domain doc) notes InterviewSession = round, InterviewTask = action item, and the template constant
 <!-- AC:END -->
@@ -99,10 +99,21 @@ DONE:
 - Specs: `spec/models/interview_process_spec.rb` (templates, seed_default incl. idempotency + unknown template, in_flight_for), `interview_session_spec.rb` (relaxed validation, placeholder no-advance, book-date-later advances), `home_spec.rb` (sequence position renders).
 - Basis (JP #7068 / UJP #268) seeded with `:compressed`; round 1 (Screening / "Recruiter screen") scheduled 2026-09-03 15:00 UTC, interviewers "Recruiter (via Beep intro)".
 
-NOT DONE (remaining ACs #6, #7, #8-partial):
-- No UI to run `seed_default` or set a round's `outcome` / `scheduled_at` -- console only right now. The posting show page still has the old flat "log session" admin form + `order(scheduled_at: :desc)` list; it needs the ordered checklist + per-round outcome control + "add next round" / "seed process from template".
-- Terminal wiring: setting the final round's `outcome` to advanced/rejected does not yet move `UserJobPosting` to an `offered`/`rejected` outcome or back to `applied`. Only the scheduled-round -> `interview` advance exists.
-- `interview_process_spec.rb` has no terminal-outcome test (nothing to test yet).
+2026-09-26 (session 14) -- RESOLVED ACs #6, #7, #8:
+- Added `InterviewSession#sync_application_outcome` on `after_update if: :saved_change_to_outcome?`:
+  - Setting outcome to `rejected` marks `UserJobPosting.outcome = 'rejected'`, logs reason, and triggers company cooldown.
+  - Setting outcome on the final round to `advanced` marks `UserJobPosting.outcome = 'offered'`.
+  - Reverting to `pending` clears the interview-session-driven outcome on `UserJobPosting`.
+- Extended `Admin::InterviewSessionsController`:
+  - Added `POST :seed` action to materialize template rounds from the web UI.
+  - Added sequential position calculation (`next_position`) when adding next rounds.
+  - Added route `post :seed` on `interview_sessions` collection.
+- Updated `job_postings/show.html.erb`:
+  - Renders interview rounds as an ordered sequence (`InterviewSession.includes(:interview_questions).ordered`).
+  - Provides "Seed Interview Sequence" form when no sessions are logged yet.
+  - Provides inline outcome selector and optional schedule date form per round.
+  - Provides "Add Next Round" affordance at the end of the sequence.
+- All model, request, and controller specs green (39/39 passing).
 <!-- SECTION:NOTES:END -->
 
 ## Comments

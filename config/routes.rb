@@ -279,7 +279,11 @@ Rails.application.routes.draw do
       end
       resources :pipeline_steps, only: [:create]
       resources :contacts, only: %i[create destroy]
-      resources :interview_sessions, only: %i[create update]
+      resources :interview_sessions, only: %i[create update] do
+        collection do
+          post :seed
+        end
+      end
       resources :interview_tasks, only: [:create]
       resources :application_questions, only: %i[create destroy]
     end

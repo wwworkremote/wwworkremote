@@ -108,4 +108,69 @@ RSpec.describe InterviewSession do
       expect(ujp.reload.status).to eq("interview")
     end
   end
+
+  describe "syncing outcome to the tracked application on update" do
+    let(:user) { create(:user) }
+    let(:job_posting) { create(:job_posting) }
+    let!(:ujp) { create(:user_job_posting, user:, job_posting:, status: "applied") }
+
+    context "when a round is marked rejected" do
+      let!(:round) { create(:interview_session, user:, job_posting:, session_type: "Screening", position: 1) }
+
+      it "sets the application outcome to rejected" do
+        round.update!(outcome: "rejected")
+
+        expect(ujp.reload.outcome).to eq("rejected")
+        expect(ujp.outcome_source).to eq("interview_session")
+        expect(ujp.outcome_reason).to include("Screening")
+      end
+
+      it "triggers company cooldown if company_record is present" do
+        company = create(:company)
+        job_posting.update!(company: company)
+
+        expect { round.update!(outcome: "rejected") }
+          .to change { company.reload.last_declined_at }.from(nil)
+      end
+    end
+
+    context "when an intermediate round is marked advanced" do
+      let!(:first_round) { create(:interview_session, user:, job_posting:, position: 1) }
+
+      before { create(:interview_session, user:, job_posting:, position: 2) }
+
+      it "keeps the application outcome nil and status interview" do
+        first_round.update!(outcome: "advanced")
+
+        expect(ujp.reload.outcome).to be_nil
+        expect(ujp.status).to eq("interview")
+      end
+    end
+
+    context "when the final round is marked advanced" do
+      let!(:first_round) { create(:interview_session, user:, job_posting:, position: 1) }
+      let!(:final_round) { create(:interview_session, user:, job_posting:, position: 2) }
+
+      it "sets the application outcome to offered" do
+        first_round.update!(outcome: "advanced")
+        final_round.update!(outcome: "advanced")
+
+        expect(ujp.reload.outcome).to eq("offered")
+        expect(ujp.outcome_source).to eq("interview_session")
+      end
+    end
+
+    context "when an outcome is reverted to pending" do
+      let!(:round) { create(:interview_session, user:, job_posting:, position: 1) }
+
+      it "clears the application outcome if it was driven by an interview session" do
+        round.update!(outcome: "rejected")
+        expect(ujp.reload.outcome).to eq("rejected")
+
+        round.update!(outcome: "pending")
+        expect(ujp.reload.outcome).to be_nil
+        expect(ujp.outcome_source).to be_nil
+      end
+    end
+  end
 end

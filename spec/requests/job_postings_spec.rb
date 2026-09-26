@@ -316,6 +316,7 @@ RSpec.describe "Job Postings" do
       owner = User.find_or_create_by!(email: "mike@just3ws.com") { |record|
         record.name = "mike"; record.password = "password"
       }
+      # rubocop:disable-next RSpec/AnyInstance
       allow_any_instance_of(JobPostingsController).to receive(:current_user).and_return(owner)
       application = create(:user_job_posting, user: owner, job_posting: job, status: "applied",
                                               applied_at: Time.current)
@@ -326,6 +327,29 @@ RSpec.describe "Job Postings" do
       expect(response.body).to include("View submission receipt")
       expect(response.body).to include("https://employer.example/confirmation/999")
       expect(application.reload.status).to eq("applied")
+    end
+
+    it "renders the seed interview sequence form when no sessions exist" do
+      get job_posting_path(job)
+
+      expect(response.body).to include("Seed Interview Sequence")
+      expect(response.body).to include("Seed Process")
+    end
+
+    it "renders the ordered interview sequence and add next round affordance when sessions exist" do
+      user = User.find_or_create_by!(email: "mike@just3ws.com") { |r| r.name = "mike"; r.password = "password" }
+      create(:interview_session, user: user, job_posting: job, session_type: "Screening",
+                                 position: 1, notes: "Recruiter screen")
+      create(:interview_session, user: user, job_posting: job, session_type: "Technical",
+                                 position: 2, notes: "Coding challenge")
+
+      get job_posting_path(job)
+
+      expect(response.body).to include("Round 1 of 2")
+      expect(response.body).to include("Recruiter screen")
+      expect(response.body).to include("Round 2 of 2")
+      expect(response.body).to include("Coding challenge")
+      expect(response.body).to include("Add Next Round (Round 3)")
     end
 
     it "shows the reformat button when the posting has a body and isn't already reformatting" do

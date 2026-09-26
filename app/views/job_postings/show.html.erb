@@ -352,65 +352,111 @@
           <% end %>
         </div>
 
-        <!-- New Session Form -->
-        <div class="bg-white/5 rounded-2xl p-6 border border-white/5">
-          <h3 class="text-sm font-bold text-primary mb-6 flex items-center gap-2">
-            <%= heroicon "plus-circle", variant: :solid, options: { class: "w-4 h-4" } %> <%= t('.interview_notes.log_session') %>
-          </h3>
-          <%= form_with url: admin_job_posting_interview_sessions_path(@job_posting), class: "grid grid-cols-1 md:grid-cols-3 gap-4" do |f| %>
-            <%= f.select :session_type, InterviewSession::SESSION_TYPES, {}, class: "select select-bordered bg-base-300 rounded-xl text-sm font-mono" %>
-            <%= f.datetime_field :scheduled_at, class: "input input-bordered bg-base-300 rounded-xl text-sm font-mono" %>
-            <%= f.submit t('.interview_notes.add_session'), class: "btn btn-primary btn-sm rounded-xl font-bold" %>
-          <% end %>
-        </div>
+        <% interview_sessions = @job_posting.interview_sessions.includes(:interview_questions).ordered %>
 
-        <!-- Session List -->
-        <div class="space-y-8">
-          <% @job_posting.interview_sessions.order(scheduled_at: :desc).each do |session| %>
-            <div class="border-l-2 border-primary/30 pl-8 relative">
-              <div class="absolute -left-[9px] top-0 w-4 h-4 rounded-full bg-primary animate-pulse"></div>
+        <% if interview_sessions.empty? %>
+          <!-- Seed Process From Template -->
+          <div class="bg-white/5 rounded-2xl p-6 border border-white/5 mb-6">
+            <h3 class="text-sm font-bold text-primary mb-2 flex items-center gap-2">
+              <%= heroicon "sparkles", variant: :solid, options: { class: "w-4 h-4" } %> <%= t('.interview_notes.seed_heading') %>
+            </h3>
+            <p class="text-xs text-slate-400 mb-4">Materialize the standard sequence of interview rounds for this role.</p>
+            <%= form_with url: seed_admin_job_posting_interview_sessions_path(@job_posting), method: :post, class: "flex flex-wrap items-center gap-3" do |f| %>
+              <%= f.select :template, [["Standard Senior (7 rounds)", "standard_senior"], ["Compressed / Startup (6 rounds)", "compressed"], ["Staff / Principal (10 rounds)", "staff"]], {}, class: "select select-bordered bg-base-300 rounded-xl text-xs font-mono" %>
+              <%= f.submit t('.interview_notes.seed_process'), class: "btn btn-primary btn-sm rounded-xl font-bold" %>
+            <% end %>
+          </div>
 
-              <div class="flex justify-between items-start mb-4">
-                <div>
-                  <div class="text-xs font-bold text-slate-400 mb-1">
-                    <%= session.scheduled_at&.strftime("%b %-d, %Y · %H:%M") || "Unscheduled" %>
-                  </div>
-                  <h4 class="text-lg font-black text-white tracking-tight"><%= session.session_type.humanize %></h4>
-                </div>
-                <div class="badge badge-outline border-primary/40 text-primary text-xs font-bold">
-                  <%= t('.interview_notes.vibe_label') %>: <%= session.vibe || t('.interview_notes.vibe_pending') %>
-                </div>
-              </div>
-              <%= form_with model: session, url: admin_job_posting_interview_session_path(@job_posting, session), method: :patch, class: "flex flex-wrap items-center gap-2 mb-4" do |form| %>
-                <%= form.select :outcome, [["Pending", "pending"], ["Passed", "passed"], ["Failed", "failed"], ["Cancelled", "cancelled"]], {}, class: "select select-bordered select-xs bg-base-300 text-white" %>
-                <%= form.submit "Record outcome", class: "btn btn-ghost btn-xs border-white/20 font-bold" %>
-              <% end %>
+          <!-- Log Single Session Form -->
+          <div class="bg-white/5 rounded-2xl p-6 border border-white/5">
+            <h3 class="text-sm font-bold text-primary mb-6 flex items-center gap-2">
+              <%= heroicon "plus-circle", variant: :solid, options: { class: "w-4 h-4" } %> <%= t('.interview_notes.log_session') %>
+            </h3>
+            <%= form_with url: admin_job_posting_interview_sessions_path(@job_posting), class: "grid grid-cols-1 md:grid-cols-3 gap-4" do |f| %>
+              <%= f.select :session_type, InterviewSession::SESSION_TYPES, {}, class: "select select-bordered bg-base-300 rounded-xl text-sm font-mono" %>
+              <%= f.datetime_field :scheduled_at, class: "input input-bordered bg-base-300 rounded-xl text-sm font-mono" %>
+              <%= f.submit t('.interview_notes.add_session'), class: "btn btn-primary btn-sm rounded-xl font-bold" %>
+            <% end %>
+          </div>
+        <% else %>
+          <!-- Ordered Session Checklist -->
+          <div class="space-y-6">
+            <% interview_sessions.each_with_index do |session, idx| %>
+              <div class="border-l-2 <%= session.outcome == 'advanced' ? 'border-emerald-500/50' : (session.outcome == 'rejected' ? 'border-rose-500/50' : 'border-primary/30') %> pl-8 relative">
+                <div class="absolute -left-[9px] top-0 w-4 h-4 rounded-full <%= session.outcome == 'advanced' ? 'bg-emerald-400' : (session.outcome == 'rejected' ? 'bg-rose-500' : 'bg-primary animate-pulse') %>"></div>
 
-              <!-- Questions in this session -->
-              <div class="mt-6 space-y-4">
-                <div class="text-xs font-bold text-slate-500 mb-4"><%= t('.interview_notes.qa_heading') %></div>
-                <% session.interview_questions.each do |q| %>
-                  <div class="bg-white/[0.02] p-4 rounded-xl border border-white/5">
-                    <div class="text-xs font-bold text-primary mb-2"><%= q.category&.humanize %></div>
-                    <p class="text-sm text-white font-bold mb-3 italic">"<%= q.question_text %>"</p>
-                    <div class="text-xs text-base-content/60 leading-relaxed border-t border-white/5 pt-3">
-                      <%= q.answer_text %>
+                <div class="flex justify-between items-start mb-2">
+                  <div>
+                    <div class="flex items-center gap-2 mb-1">
+                      <span class="badge badge-sm font-mono font-bold <%= session.outcome == 'advanced' ? 'badge-success text-white' : (session.outcome == 'rejected' ? 'badge-error text-white' : 'badge-neutral') %>">
+                        Round <%= session.position || (idx + 1) %> of <%= interview_sessions.size %>
+                      </span>
+                      <span class="text-xs text-slate-400">
+                        <%= session.scheduled_at&.strftime("%b %-d, %Y · %H:%M") || t('.interview_notes.not_scheduled') %>
+                      </span>
                     </div>
+                    <h4 class="text-base font-black text-white tracking-tight">
+                      <%= session.session_type.humanize %>
+                      <% if session.notes.present? %>
+                        <span class="text-xs font-normal text-slate-400">· <%= session.notes %></span>
+                      <% end %>
+                    </h4>
+                    <% if session.interviewers.present? %>
+                      <div class="text-xs text-slate-500 mt-0.5">Interviewers: <%= session.interviewers %></div>
+                    <% end %>
                   </div>
+                  <div class="badge badge-outline border-primary/40 text-primary text-xs font-bold">
+                    <%= t('.interview_notes.vibe_label') %>: <%= session.vibe || t('.interview_notes.vibe_pending') %>
+                  </div>
+                </div>
+
+                <%= form_with model: session, url: admin_job_posting_interview_session_path(@job_posting, session), method: :patch, class: "flex flex-wrap items-center gap-2 my-3" do |form| %>
+                  <%= form.select :outcome, [["Pending", "pending"], ["Advanced", "advanced"], ["Rejected", "rejected"], ["No Signal", "no_signal"]], {}, class: "select select-bordered select-xs bg-base-300 text-white" %>
+                  <% if session.scheduled_at.blank? %>
+                    <%= form.datetime_field :scheduled_at, class: "input input-bordered input-xs bg-base-300 rounded text-xs font-mono", placeholder: "Schedule date" %>
+                  <% end %>
+                  <%= form.submit "Record outcome", class: "btn btn-ghost btn-xs border-white/20 font-bold" %>
                 <% end %>
 
-                <!-- Add Question Inline -->
-                <%= form_with url: admin_interview_session_interview_questions_path(session), class: "mt-4" do |f| %>
-                  <div class="flex gap-2">
-                    <%= f.text_field :question_text, placeholder: t('.interview_notes.question_placeholder'), class: "input input-bordered input-sm bg-base-300 flex-1 rounded-lg text-sm font-mono" %>
-                    <%= f.select :category, InterviewQuestion::CATEGORIES, {}, class: "select select-bordered select-sm bg-base-300 rounded-lg text-sm font-mono" %>
-                    <%= f.submit t('.interview_notes.add_question'), class: "btn btn-ghost btn-sm border-white/10 rounded-lg font-bold" %>
-                  </div>
-                <% end %>
+                <!-- Questions in this session -->
+                <div class="mt-4 space-y-4">
+                  <div class="text-xs font-bold text-slate-500 mb-2"><%= t('.interview_notes.qa_heading') %></div>
+                  <% session.interview_questions.each do |q| %>
+                    <div class="bg-white/[0.02] p-4 rounded-xl border border-white/5">
+                      <div class="text-xs font-bold text-primary mb-2"><%= q.category&.humanize %></div>
+                      <p class="text-sm text-white font-bold mb-3 italic">"<%= q.question_text %>"</p>
+                      <div class="text-xs text-base-content/60 leading-relaxed border-t border-white/5 pt-3">
+                        <%= q.answer_text %>
+                      </div>
+                    </div>
+                  <% end %>
+
+                  <!-- Add Question Inline -->
+                  <%= form_with url: admin_interview_session_interview_questions_path(session), class: "mt-4" do |f| %>
+                    <div class="flex gap-2">
+                      <%= f.text_field :question_text, placeholder: t('.interview_notes.question_placeholder'), class: "input input-bordered input-sm bg-base-300 flex-1 rounded-lg text-sm font-mono" %>
+                      <%= f.select :category, InterviewQuestion::CATEGORIES, {}, class: "select select-bordered select-sm bg-base-300 rounded-lg text-sm font-mono" %>
+                      <%= f.submit t('.interview_notes.add_question'), class: "btn btn-ghost btn-sm border-white/10 rounded-lg font-bold" %>
+                    </div>
+                  <% end %>
+                </div>
               </div>
-            </div>
-          <% end %>
-        </div>
+            <% end %>
+          </div>
+
+          <!-- Add Next Round Affordance -->
+          <div class="bg-white/5 rounded-2xl p-6 border border-white/5 mt-8">
+            <h4 class="text-xs font-bold text-primary mb-4 flex items-center gap-2">
+              <%= heroicon "plus-circle", variant: :solid, options: { class: "w-4 h-4" } %> <%= t('.interview_notes.add_next_round') %> (Round <%= interview_sessions.size + 1 %>)
+            </h4>
+            <%= form_with url: admin_job_posting_interview_sessions_path(@job_posting), class: "grid grid-cols-1 md:grid-cols-4 gap-4" do |f| %>
+              <%= f.select :session_type, InterviewSession::SESSION_TYPES, {}, class: "select select-bordered bg-base-300 rounded-xl text-xs font-mono" %>
+              <%= f.text_field :notes, placeholder: "Round focus (e.g. System Design)", class: "input input-bordered bg-base-300 rounded-xl text-xs font-mono" %>
+              <%= f.datetime_field :scheduled_at, class: "input input-bordered bg-base-300 rounded-xl text-xs font-mono", placeholder: "Schedule date" %>
+              <%= f.submit t('.interview_notes.add_session'), class: "btn btn-primary btn-sm rounded-xl font-bold" %>
+            <% end %>
+          </div>
+        <% end %>
       </div>
     </div>
   </article>

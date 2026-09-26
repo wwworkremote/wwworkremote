@@ -61,9 +61,17 @@ class InterviewSession < ApplicationRecord
   # Booking a date on a seeded placeholder round is the same signal as
   # creating an already-scheduled one.
   after_update :advance_application_to_interview, if: :saved_change_to_scheduled_at?
+  after_update :sync_application_outcome, if: :saved_change_to_outcome?
 
   def pending?
     outcome == "pending"
+  end
+
+  def final_round?
+    sibling_rounds = user.interview_sessions.where(job_posting_id:).ordered
+    return true if sibling_rounds.empty?
+
+    sibling_rounds.last.id == id
   end
 
   private
@@ -72,5 +80,38 @@ class InterviewSession < ApplicationRecord
     return if scheduled_at.blank?
 
     UserJobPosting.find_by(user_id:, job_posting_id:)&.record_status_event!("interview")
+  end
+
+  def sync_application_outcome
+    ujp = UserJobPosting.find_by(user_id:, job_posting_id:)
+    return unless ujp
+
+    apply_outcome_transition(ujp)
+  end
+
+  def apply_outcome_transition(ujp)
+    case outcome
+    when "rejected" then apply_rejected_outcome(ujp)
+    when "advanced" then apply_advanced_outcome(ujp)
+    when "pending"  then clear_interview_outcome(ujp)
+    end
+  end
+
+  def apply_advanced_outcome(ujp)
+    return unless final_round?
+
+    ujp.update!(outcome: "offered", outcome_at: Time.current, outcome_source: "interview_session")
+  end
+
+  def apply_rejected_outcome(ujp)
+    ujp.update!(outcome: "rejected", outcome_at: Time.current, outcome_source: "interview_session",
+                outcome_reason: "Rejected at #{notes.presence || session_type} round")
+    ujp.job_posting.company_record&.record_decline!
+  end
+
+  def clear_interview_outcome(ujp)
+    return unless ujp.outcome_source == "interview_session"
+
+    ujp.update!(outcome: nil, outcome_at: nil, outcome_source: nil, outcome_reason: nil)
   end
 end
