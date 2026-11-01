@@ -619,7 +619,7 @@ RSpec.describe "Job Postings" do
 
         get job_posting_path(job)
 
-        expect(response.body).to include("Unscheduled")
+        expect(response.body).to include("Not scheduled yet")
       end
 
       it "surfaces the read-aloud version and its pronunciation hints when present" do

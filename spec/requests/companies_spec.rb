@@ -36,7 +36,7 @@ RSpec.describe "Companies" do
     end
 
     it "shows the cooldown-until date on the company's own page" do
-      company.update!(last_declined_at: Time.zone.parse("2026-04-01"))
+      company.update!(last_declined_at: 1.month.ago)
       get company_path(company)
       expect(response.body).to include("cooldown until")
     end
