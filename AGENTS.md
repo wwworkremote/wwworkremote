@@ -1,5 +1,5 @@
 <!-- ═══════════════════════════════════════════════════════════════════════
-     CURRENT FOCUS  —  last updated 2026-09-26 (session 14)
+     CURRENT FOCUS  —  last updated 2026-11-07 (session 15)
      Cold-start resume state, canonical for every agent tool (Claude, Codex,
      Gemini, Antigravity). Whoever closes a session rewrites this whole block
      in place — step one, before the wrap-up. `git log` + Backlog are truth
@@ -30,24 +30,26 @@
   Live tasks (Backlog MCP):
     TASK-151  (Med, DONE) RubyLLM 1.16 to 2.0 upgrade.
     TASK-140  (Med, DONE) JobBoards::Syncer starves on unordered LIMIT.
-              Fixed FIFO ordering, limit 500, mark_failed, drained backlog to 0 pending.
     TASK-147.1 (Med, DONE) multi-round interview tracking.
-              Ordered sequence UI, template seeding, next round affordance, terminal outcome sync.
     TASK-141  (High, In Progress) dev web service wedges silently.
-              Mitigated: cluster mode + WebHealthWatchdogJob. Root cause open.
     TASK-143  (Med) guided harness: no first-class Lever support.
     TASK-142  (Low) ClaudeAssets pre-commit hook broken on main.
               Workaround: SKIP=ClaudeAssets for any .claude/ commits.
     TASK-139  (Med) chrome.debugger dies before 2nd capture — needs retest.
     TASK-112  guided recorder HITL ACs #3/#4/#5 — wants a Greenhouse run.
 
-  Operational state (verified 2026-09-26):
-    web: running via launchd (bin/wwwr-ctl status).
-    jobs: running via launchd (bin/wwwr-ctl status).
+  Operational state (verified 2026-11-07):
+    web: running via launchd (bin/wwwr-ctl status, port 31000).
+    jobs: stopped cleanly to maintain lightweight dev environment.
+    backlog: running via launchd (com.wwworkremote.backlog, port 31055, proxy 31050).
     database: wwworkremote_development up to date with RubyLLM 2.0 tables.
-    test suite: full suite 100% green (1286/1286 passing).
     git: clean after commit. Run bin/tmi-scan before pushing.
 
+  Done 2026-11-07 session 15 (Antigravity):
+    - Reaped orphaned Solid Queue processes and maintained lightweight web-only dev operation.
+    - Scoped `bin/wwwr-ctl` orphan detection to `$APP_ROOT` to protect other machine processes.
+    - Fixed polymorphic `#company` handling in `bin/fetch-jobs`.
+    - Configured persistent Backlog.md service and Nginx TLS proxy on port 31050.
   Done 2026-09-26 session 14 (Antigravity):
     - Completed TASK-147.1: multi-round interview tracking (ACs #6, #7, #8).
     - Finalized, committed, and pushed TASK-140 (resolve JobBoards::Syncer starvation).

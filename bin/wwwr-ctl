@@ -57,7 +57,13 @@ WEB_READY_TIMEOUT=30
 # happened twice, ~11h and unknown duration, produced fake JobPosting rows
 # each time before being found by hand).
 _sq_all_pids() {
-  ps -eo pid=,command= | grep -E 'solid-queue-(worker|dispatcher|scheduler|fork-supervisor)\(' | awk '{print $1}'
+  local pid
+  while read -r pid; do
+    [[ -n "$pid" ]] || continue
+    if lsof -p "$pid" -a -d cwd -Fn 2>/dev/null | grep -q "n${APP_ROOT}"; then
+      echo "$pid"
+    fi
+  done < <(ps -eo pid=,command= | grep -E 'solid-queue-(worker|dispatcher|scheduler|fork-supervisor)\(' | awk '{print $1}')
 }
 
 _sq_supervised_pids() {

@@ -25,7 +25,8 @@ if u&.career_profile
     puts "\n🎯 TOP SEMANTIC MATCHES FOR YOU:"
     puts "=" * 60
     matches.each_with_index do |j, idx|
-      puts "#{idx + 1}. [##{j.id}] #{j.title} @ #{j.company&.name || j.company_name}"
+      comp = j.company.respond_to?(:name) ? j.company.name : (j.company || j.company_name)
+      puts "#{idx + 1}. [##{j.id}] #{j.title} @ #{comp}"
       puts "   Location: #{j.location}"
       puts "   Apply: #{j.target_url}\n\n"
     end
